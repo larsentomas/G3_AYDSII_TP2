@@ -3,9 +3,7 @@ package sistema;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -15,19 +13,6 @@ public class Servidor {
     private ConcurrentHashMap<String, HandlerClientes> directorio = new ConcurrentHashMap<>();
     private final Map<String, Queue<Mensaje>> colaMensajes = new ConcurrentHashMap<>();
 
-    public boolean registerClient(String username, HandlerClientes handler) {
-        HandlerClientes existe = directorio.get(username);
-        if (existe != null && existe.isConectado()) {
-            return false;
-        }
-
-        directorio.put(username, handler);
-        return true;
-    }
-
-    public void removeClient(String username){
-        directorio.remove(username);
-    }
 
     public static void main(String[] args) throws IOException {
         new Servidor().start(8080);
@@ -53,17 +38,17 @@ public class Servidor {
         }
     }
 
-    public void routeMensaje(Mensaje mensajito) {
-        HandlerClientes receptor = directorio.get(mensajito.getReceptor());
+    public void routeMensaje(Mensaje mensaje) {
+        HandlerClientes receptor = directorio.get(mensaje.getReceptor());
         if (receptor != null) {
             if (receptor.isConectado()) {
-                receptor.sendMessage(mensajito);
+                receptor.enviarRespuesta("MENSAJE_RECIBIDO", Map.of("mensaje", mensaje), false, null);
             } else {
-                colaMensajes.computeIfAbsent(mensajito.getReceptor(), k -> new LinkedList<>()).add(mensajito);
-                System.out.println("Stored message for " + mensajito.getReceptor());
+                colaMensajes.computeIfAbsent(mensaje.getReceptor(), k -> new LinkedList<>()).add(mensaje);
+                System.out.println("Stored message for " + mensaje.getReceptor());
             }
         } else {
-            System.out.println("Usuario " + mensajito.getReceptor() + " no encontrado.");
+            System.out.println("Usuario " + mensaje.getReceptor() + " no encontrado.");
         }
     }
 
@@ -71,4 +56,21 @@ public class Servidor {
         return colaMensajes.remove(username);
     }
 
+    public boolean registerClient(String username, HandlerClientes handler) {
+        HandlerClientes existe = directorio.get(username);
+        if (existe != null && existe.isConectado()) {
+            return false;
+        }
+
+        directorio.put(username, handler);
+        return true;
+    }
+
+    public void removeClient(String username){
+        directorio.remove(username);
+    }
+
+    public Set<String> getAllUsernames() {
+        return directorio.keySet();
+    }
 }

@@ -5,10 +5,10 @@ import java.util.Map;
 public class Respuesta {
     private final String tipo;
     private final Map<String, Object> datos;
-    private final int error;
+    private final boolean error;
     private final String errorMensaje;
 
-    public Respuesta(String tipo, Map<String, Object> datos, int error, String errorMensaje) {
+    public Respuesta(String tipo, Map<String, Object> datos, boolean error, String errorMensaje) {
         this.tipo = tipo;
         this.datos = datos;
         this.error = error;
@@ -23,7 +23,7 @@ public class Respuesta {
         return datos;
     }
 
-    public int getError() {
+    public boolean getError() {
         return error;
     }
 
@@ -31,5 +31,5 @@ public class Respuesta {
         return errorMensaje;
     }
 
-    
+
 }

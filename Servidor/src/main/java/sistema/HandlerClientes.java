@@ -2,7 +2,10 @@ package sistema;
 
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 public class HandlerClientes implements Runnable {
     private Socket socket;
@@ -12,15 +15,12 @@ public class HandlerClientes implements Runnable {
     private String username;
     private volatile boolean conectado = true;
 
-    public HandlerClientes(Socket socket, Servidor server){
+    public HandlerClientes(Socket socket, Servidor server) throws IOException {
         this.socket = socket;
         this.server = server;
-        try {
-            this.outputStream = new ObjectOutputStream(socket.getOutputStream());
-            this.inputStream = new ObjectInputStream(socket.getInputStream());
-        } catch (IOException e) {
-            System.out.println("Error " + e.getMessage());
-        }
+        this.outputStream = new ObjectOutputStream(socket.getOutputStream());
+        this.outputStream.flush();
+        this.inputStream = new ObjectInputStream(socket.getInputStream());
     }
 
     public boolean isConectado() {
@@ -31,67 +31,17 @@ public class HandlerClientes implements Runnable {
         return username;
     }
 
-    public void run(){
-
-        try{
-            Object obj;
-
-            outputStream = new ObjectOutputStream(socket.getOutputStream());
-            outputStream.flush();
-            inputStream = new ObjectInputStream(socket.getInputStream());
-
-            Object firstObj = inputStream.readObject();
-            if (!(firstObj instanceof String)) {
-                System.out.println("Se esperaba un nombre de usuario");
-                socket.close();
-                return;
-            }
-
-            username = (String) firstObj;
-            if (!server.registerClient(username, this)) {
-                sendMessage(new Mensaje("Server", username, "No Valido"));
-                socket.close();
-                return;
-            }else{
-                sendMessage(new Mensaje("Server", username, "Valido"));
-            }
-
-            System.out.println(username + "Conectado.");
-
-            Queue<Mensaje> queue = server.getMensajesOffline(username);
-            if (queue != null) {
-                while (!queue.isEmpty()) {
-                    sendMessage(queue.poll());
-                }
-            }
-
-            Object obj;
-            while ((obj = inputStream.readObject()) != null) {
-                if (obj instanceof Mensaje mensajito) {
-                    System.out.println("[" + username + " → " + mensajito.getReceptor() + "]: " + mensajito.getContenido());
-                    server.routeMensaje(mensajito);
-                }
-            }
-
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } finally {
-            conectado = false; // ✅ Just mark as disconnected
-            try { socket.close(); } catch (IOException ignored) {}
-        }
-    }
-
     @Override
     public void run() {
         try {
             Object obj;
 
-            // Main loop: handle incoming objects from client
             while ((obj = inputStream.readObject()) != null) {
 
                 // Handle chat messages
                 if (obj instanceof Mensaje mensaje) {
                     server.routeMensaje(mensaje);
+                    enviarRespuesta("MENSAJE_RECIBIDO", Map.of(), false, null);
                 }
 
                 // Handle protocol requests
@@ -101,58 +51,60 @@ public class HandlerClientes implements Runnable {
                             String name = request.getDatos().get("username");
 
                             if (name == null || name.isBlank()) {
-                                sendMessage(new Mensaje("Server", username, "No se especifico el nombre de usuario"));
+                                enviarRespuesta("LOGIN",Map.of(), true, "Nombre de usuario no valido");
                                 socket.close();
                                 return;
                             }
 
-                            // Register user with server
                             if (server.registerClient(name, this)) {
                                 this.username = name;
                                 this.conectado = true;
-                                sendMessage(new Mensaje("Server", username, "Valido"));
+                                enviarRespuesta("LOGIN", Map.of(), false,"");
 
-                                // Deliver offline messages if any
                                 Queue<Mensaje> queued = server.getMensajesOffline(username);
                                 if (queued != null) {
-                                    queued.forEach(this::sendMessage);
+
+                                    for(Mensaje m:queued){
+                                        enviarRespuesta("MENSAJE_ENVIADO", Map.of("mensaje", m), false, "");
+                                    }
                                 }
 
                             } else {
-                                sendMessage(new Mensaje("Server", username, "No Valido"));
+                                enviarRespuesta("LOGIN", Map.of(), true, "Nombre de usuario ya en uso");
                                 socket.close();
                                 return;
                             }
                         }
                         case "LOGOUT" -> {
                             this.conectado = false;
+                            enviarRespuesta("LOGOUT", Map.of(), false, null);
                             socket.close();
                             return; // finalizar thread
                         }
 
-                        case "GET_DIRECTORY" -> {
+                        case "DIRECTORIO" -> {
                             Set<String> usernames = server.getAllUsernames();
-                            out.writeObject(usernames);
-                            out.flush();
+                            outputStream.writeObject(usernames);
+                            outputStream.flush();
                             System.out.println("📒 Sent directory to " + username);
                         }
 
-                        default -> System.out.println("⚠️ Unknown request: " + request.getType());
+                        default -> enviarRespuesta("UNKNOWN_REQUEST", Map.of(), true, "No se reconoce la solicitud");
                     }
                 }
 
                 else {
-                    System.out.println("⚠️ Unknown object type received from client.");
+                    System.out.println("⚠️ Unknown object received: " + obj.getClass().getName());
+                    enviarRespuesta("UNKNOWN_OBJECT", Map.of(), true, "Objeto desconocido");
                 }
             }
 
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("⚡ Connection lost with " + username);
+            System.out.println("Connection lost with " + username);
         } finally {
-            // Gracefully mark as disconnected
             if (username != null) {
-                connected = false;
-                System.out.println("🔌 " + username + " disconnected.");
+                conectado = false;
+                System.out.println(username + " disconnected.");
             }
 
             try {
@@ -161,9 +113,10 @@ public class HandlerClientes implements Runnable {
             }
         }
     }
-    public void sendMessage(Mensaje mensajito) {
+    public void enviarRespuesta(String tipo, Map<String, Object> datos, boolean error, String mensaje) {
         try {
-            outputStream.writeObject(mensajito);
+            Respuesta response = new Respuesta(tipo, datos, error, mensaje);
+            outputStream.writeObject(response);
             outputStream.flush();
         } catch (IOException e) {
             System.out.println("Failed to send message to " + username);
