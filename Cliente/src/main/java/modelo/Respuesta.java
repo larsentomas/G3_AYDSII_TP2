@@ -1,11 +1,15 @@
 package modelo;
 
 import java.util.Map;
+import java.io.Serializable;
 
-public class Respuesta {
+public class Respuesta implements Serializable {
 
-    private static String LOGIN = "LOGIN";
-    private static String DIRECTORIO = "DIRECTORIO";
+    public static String LOGIN = "LOGIN";
+    public static String LOGOUT = "LOGOUT";
+    public static String DIRECTORIO = "DIRECTORIO";
+    public static String ENVIAR_MENSAJE = "ENVIAR_MENSAJE";
+    public static String MENSAJE_RECIBIDO = "MENSAJE_RECIBIDO";
 
     private final String tipo;
     private final Map<String, Object> datos;

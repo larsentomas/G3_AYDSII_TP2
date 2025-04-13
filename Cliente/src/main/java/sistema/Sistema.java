@@ -214,7 +214,8 @@ public class Sistema {
             new Thread(new HandlerMensajes(usuarioLogueado)).start();
 
             // Iniciar el hilo para enviar mensajes
-            new Thread(new Comunicador(new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre())), usuarioLogueado.getSocket())).start();
+            Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
+            new Thread(new Comunicador(solicitud, usuarioLogueado.getSocket())).start();
 
             // El handler de mensajes esta a la espera de mensajes
             // El comunicador va avisarle al servidor que quiere hacer login con un nickname

@@ -14,28 +14,18 @@ import java.util.Queue;
 import java.util.Set;
 
 public class HandlerClientes implements Runnable {
-    private Socket socket;
+    private Socket socketRecepcion;
+    private Socket socketEnvio;
     private Servidor server;
-    private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;
+    private ObjectOutputStream outputStream;
     private String username;
     private volatile boolean conectado = true;
 
-    public HandlerClientes(Socket socket, Servidor server) throws IOException {
-        this.socket = socket;
+    public HandlerClientes(Socket socketRecepcion, Servidor server) throws IOException {
+        this.socketRecepcion = socketRecepcion;
         this.server = server;
-        this.outputStream = new ObjectOutputStream(socket.getOutputStream());
-        this.outputStream.flush();
-        this.inputStream = new ObjectInputStream(socket.getInputStream());
-    }
-
-    public HandlerClientes(String ip, int port, Servidor server) throws IOException {
-        System.out.println("Conectando a cliente " + ip + ":" + port);
-        this.socket = new Socket(ip, port);
-        this.server = server;
-        this.outputStream = new ObjectOutputStream(socket.getOutputStream());
-        this.outputStream.flush();
-        this.inputStream = new ObjectInputStream(socket.getInputStream());
+        this.inputStream = new ObjectInputStream(socketRecepcion.getInputStream());
     }
 
     public boolean isConectado() {
@@ -46,30 +36,32 @@ public class HandlerClientes implements Runnable {
         return username;
     }
 
-    public Socket getSocket() {
-        return socket;
+    public Socket getSocketRecepcion() {
+        return socketRecepcion;
     }
 
     @Override
     public void run() {
         try {
             Object obj;
+            System.out.println("Esperando a leer obj");
             while ((obj = inputStream.readObject()) != null) {
+                System.out.println("Recibido objeto: " + obj.getClass().getName());
                 if (obj instanceof Solicitud request) {
                     switch (request.getTipo()) {
-                        case "LOGIN" -> {
+                        case Solicitud.LOGIN -> {
                             System.out.println("Peticion de login");
                             handleLogin(request);
                         }
-                        case "LOGOUT" -> {
+                        case Solicitud.LOGOUT -> {
                             System.out.println("Peticion de logout");
                             handleLogout();
                         }
-                        case "DIRECTORIO" -> {
+                        case Solicitud.DIRECTORIO -> {
                             System.out.println("Peticion de directorio");
                             handleDirectorio();
                         }
-                        case "ENVIAR_MENSAJE" -> {
+                        case Solicitud.ENVIAR_MENSAJE -> {
                             System.out.println("Peticion de mensaje enviado");
                             handleEnviarMensaje(request);
                         }
@@ -90,14 +82,16 @@ public class HandlerClientes implements Runnable {
             }
 
             try {
-                socket.close();
+                socketRecepcion.close();
             } catch (IOException ignored) {
             }
         }
     }
     public void enviarRespuesta(String tipo, Map<String, Object> datos, boolean error, String mensaje) {
+        System.out.println("Intentado enviar respuesta tipo " + tipo + " a " + username + " por " + socketEnvio.getInetAddress() + ":" + socketEnvio.getPort());
         try {
             Respuesta response = new Respuesta(tipo, datos, error, mensaje);
+            ObjectOutputStream outputStream = new ObjectOutputStream(socketEnvio.getOutputStream());
             outputStream.writeObject(response);
             outputStream.flush();
         } catch (IOException e) {
@@ -107,44 +101,47 @@ public class HandlerClientes implements Runnable {
 
     private void cerrarSocket() {
         try {
-            socket.close();
+            socketRecepcion.close();
         } catch (IOException ignored) {}
     }
 
     //HANDLERS EVENTOS
 
-    private void handleLogin(Solicitud request){
+    private void handleLogin(Solicitud request) throws IOException {
         String name = (String) request.getDatos().get("usuario");
 
         if (name == null || name.isBlank()) {
-            enviarRespuesta("LOGIN",Map.of(), true, "Nombre de usuario no valido");
+            enviarRespuesta(Solicitud.LOGIN,Map.of(), true, "Nombre de usuario no valido");
             cerrarSocket();
         }
 
         if(server.logearCliente(name, this)){
             this.username = name;
             this.conectado = true;
+            int puertoCliente = (int) request.getDatos().get("puertoCliente");
+            String ipCliente = (String) request.getDatos().get("ipCliente");
+            this.socketEnvio = new Socket(ipCliente, puertoCliente);
             handleColaMensajes(name);
-            enviarRespuesta("LOGIN", Map.of("username", name), false, null);
+            enviarRespuesta(Solicitud.LOGIN, Map.of("username", name), false, null);
         }else{
-            enviarRespuesta("LOGIN", Map.of(), true, "Error al iniciar sesion");
+            enviarRespuesta(Solicitud.LOGIN, Map.of(), true, "Error al iniciar sesion");
             cerrarSocket();
         }
     }
 
     private void handleLogout(){
         this.conectado = false;
-        enviarRespuesta("LOGOUT", Map.of(), false, null);
+        enviarRespuesta(Respuesta.LOGOUT, Map.of(), false, null);
         cerrarSocket();
     }
 
     private void handleDirectorio(){
         Set<String> usernames = server.getDatosDirectorio();
         if(usernames == null || usernames.isEmpty()){
-            enviarRespuesta("DIRECTORIO", Map.of(), true, "No hay usuarios en el directorio.");
+            enviarRespuesta(Respuesta.DIRECTORIO, Map.of(), true, "No hay usuarios en el directorio.");
             return;
         }else{
-            enviarRespuesta("DIRECTORIO", Map.of("usernames", usernames), false, null);
+            enviarRespuesta(Respuesta.DIRECTORIO, Map.of("usernames", usernames), false, null);
         }
         System.out.println("📒 Sent directory to " + username);
     }
@@ -154,16 +151,16 @@ public class HandlerClientes implements Runnable {
         Conversacion c = (Conversacion) request.getDatos().get("conversacion");
 
         if (!(msj instanceof Mensaje mensaje)) {
-            enviarRespuesta("SEND_MESSAGE", Map.of(), true, "Formato de mensaje no valido.");
+            enviarRespuesta(Respuesta.ENVIAR_MENSAJE, Map.of(), true, "Formato de mensaje no valido.");
             return;
         }
 
         if (!username.equals(mensaje.getEmisor())) {
-            enviarRespuesta("SEND_MESSAGE", Map.of(), true, "El emisor no es correcto.");
+            enviarRespuesta(Respuesta.ENVIAR_MENSAJE, Map.of(), true, "El emisor no es correcto.");
             return;
         }
         server.routeMensaje(mensaje, c);
-        enviarRespuesta("SEND_MESSAGE", Map.of(), false, null);
+        enviarRespuesta(Respuesta.ENVIAR_MENSAJE, Map.of(), false, null);
     }
 
     private void handleColaMensajes(String name){
@@ -171,7 +168,7 @@ public class HandlerClientes implements Runnable {
 
         if (colaMensajes != null) {
             for (Mensaje msg : colaMensajes) {
-                enviarRespuesta("MENSAJE_RECIBIDO", Map.of("mensaje", msg), false, null);
+                enviarRespuesta(Respuesta.MENSAJE_RECIBIDO, Map.of("mensaje", msg), false, null);
             }
         }
     }
