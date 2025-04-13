@@ -22,6 +22,15 @@ public class HandlerClientes implements Runnable {
         this.inputStream = new ObjectInputStream(socket.getInputStream());
     }
 
+    public HandlerClientes(String ip, int port, Servidor server) throws IOException {
+        System.out.println("Conectando a cliente " + ip + ":" + port);
+        this.socket = new Socket(ip, port);
+        this.server = server;
+        this.outputStream = new ObjectOutputStream(socket.getOutputStream());
+        this.outputStream.flush();
+        this.inputStream = new ObjectInputStream(socket.getInputStream());
+    }
+
     public boolean isConectado() {
         return conectado;
     }
@@ -38,20 +47,23 @@ public class HandlerClientes implements Runnable {
     public void run() {
         try {
             Object obj;
-
             while ((obj = inputStream.readObject()) != null) {
                 if (obj instanceof Solicitud request) {
                     switch (request.getTipo()) {
                         case "LOGIN" -> {
+                            System.out.println("Peticion de login");
                             handleLogin(request);
                         }
                         case "LOGOUT" -> {
+                            System.out.println("Peticion de logout");
                             handleLogout();
                         }
                         case "DIRECTORIO" -> {
+                            System.out.println("Peticion de directorio");
                             handleDirectorio();
                         }
-                        case "MENSAJE_ENVIADO" -> {
+                        case "ENVIAR_MENSAJE" -> {
+                            System.out.println("Peticion de mensaje enviado");
                             handleEnviarMensaje(request);
                         }
                         default -> enviarRespuesta("UNKNOWN_REQUEST", Map.of(), true, "No se reconoce la solicitud");
@@ -95,7 +107,7 @@ public class HandlerClientes implements Runnable {
     //HANDLERS EVENTOS
 
     private void handleLogin(Solicitud request){
-        String name = (String) request.getDatos().get("username");
+        String name = (String) request.getDatos().get("usuario");
 
         if (name == null || name.isBlank()) {
             enviarRespuesta("LOGIN",Map.of(), true, "Nombre de usuario no valido");

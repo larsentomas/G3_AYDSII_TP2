@@ -1,6 +1,8 @@
 package sistema;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -26,11 +28,15 @@ public class Servidor {
             while (true) {
                 Socket socket = serverSocket.accept();
                 System.out.println("Cliente conectado: " + socket.getInetAddress());
-                
+                ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+                System.out.println(inputStream.readObject());
+
                 HandlerClientes handler = new HandlerClientes(socket, this);
                 new Thread(handler).start();
             }
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
