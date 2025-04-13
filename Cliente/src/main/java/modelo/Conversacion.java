@@ -5,6 +5,7 @@ import java.util.ArrayList;
 public class Conversacion {
     private String integrante;
     private ArrayList<Mensaje> mensajes;
+    private boolean notificado;
 
     public Conversacion(String persona) {
         this.integrante = persona;
@@ -21,6 +22,14 @@ public class Conversacion {
 
     public String getIntegrante() {
         return integrante;
+    }
+
+    public boolean isNotificado() {
+        return notificado;
+    }
+
+    public void setNotificado(boolean notificado) {
+        this.notificado = notificado;
     }
 
     @Override

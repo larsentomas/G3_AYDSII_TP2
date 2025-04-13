@@ -4,12 +4,12 @@ import java.sql.Timestamp;
 
 public class Mensaje {
     private String contenido;
-    private String remitente;
+    private String emisor;
     private Timestamp timestampCreado;
 
-    public Mensaje(String contenido, String remitente) {
+    public Mensaje(String contenido, String emisor) {
         this.contenido = contenido;
-        this.remitente = remitente;
+        this.emisor = emisor;
         this.timestampCreado = new Timestamp(System.currentTimeMillis());
     }
 
@@ -17,8 +17,8 @@ public class Mensaje {
         return contenido;
     }
 
-    public String getRemitente() {
-        return remitente;
+    public String getEmisor() {
+        return emisor;
     }
 
     public Timestamp getTimestampCreado() {
@@ -27,7 +27,7 @@ public class Mensaje {
 
     @Override
     public String toString() {
-        return "[" + this.timestampCreado.getTime() + "] " + this.remitente + ":" + this.contenido;
+        return "[" + this.timestampCreado.getTime() + "] " + this.emisor + ":" + this.contenido;
     }
 
 }

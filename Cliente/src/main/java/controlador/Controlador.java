@@ -1,10 +1,13 @@
 package controlador;
 
+import modelo.Conversacion;
+import modelo.Usuario;
 import sistema.Sistema;
 import vista.VistaInicio;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 public class Controlador implements ActionListener {
 
@@ -29,16 +32,39 @@ public class Controlador implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        Sistema s = Sistema.getInstance();
+        Sistema sistema = Sistema.getInstance();
 
         if (e.getActionCommand().equalsIgnoreCase("NUEVA_CONVERSACION")) {
+            ArrayList<String> opciones = sistema.getUsuarioLogueado().getContactosSinConversacion();
+            // Si no hay contacto para iniciar conversacion --> error
+            if (opciones.isEmpty()) {
+                vistaInicio.mostrarModalError("No hay contactos disponibles para iniciar una conversación.");
+                return;
+            }
 
-        } else if (e.getActionCommand().equalsIgnoreCase("AGERGAR_CONTACTO")) {
+            // Si hay contacto para iniciar conversacion --> mostrar modal
+            Usuario usuario_conversacion = vistaInicio.mostrarModalNuevaConversacion(opciones);
 
+            // Si el usuario no es null --> crear conversacion
+            if (usuario_conversacion != null) {
+                Conversacion c = sistema.crearConversacion(usuario_conversacion.getNombre());
+                vistaInicio.setConversacion(c);
+            }
+        } else if (e.getActionCommand().equalsIgnoreCase("AGREGAR_CONTACTO")) {
+            sistema.getPosiblesContactos();
         } else if (e.getActionCommand().equalsIgnoreCase("ENVIAR_MENSAJE")) {
-
+            String mensaje = vistaInicio.getMensaje();
+            // Validar que el mensaje no esté vacío
+            if (mensaje.isEmpty()) {
+                vistaInicio.mostrarModalError("El mensaje no puede estar vacío.");
+                return;
+            }
+            sistema.enviarMensaje(mensaje, vistaInicio.getConversacionActiva());
         } else if (e.getActionCommand().equalsIgnoreCase("LOGOUT")) {
-
+            // Cerrar la sesión del usuario
+            Sistema.cerrarSesion();
+            vistaInicio.dispose();
+            vistaInicio.setVisible(false);
         }
     }
 

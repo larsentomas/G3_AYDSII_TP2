@@ -1,19 +1,19 @@
 package controlador;
 
+import excepciones.PuertoInvalidoException;
+import excepciones.UsuarioExistenteException;
 import sistema.Sistema;
-import vista.VistaLogin;
 import vista.VistaInicio;
-
+import vista.VistaLogin;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class LoginControlador implements ActionListener {
-    private VistaLogin vistaLogin;
-    private VistaInicio vistaInicio;
+public class ControladorLogin implements ActionListener {
 
-    public LoginControlador(VistaLogin vistaLogin, VistaInicio vistaInicio) {
+    private VistaLogin vistaLogin;
+
+    public ControladorLogin(VistaLogin vistaLogin) {
         this.vistaLogin = vistaLogin;
-        this.vistaInicio = vistaInicio;
         initController();
     }
 
@@ -30,14 +30,11 @@ public class LoginControlador implements ActionListener {
             String usuario = vistaLogin.getUser();
             String puerto = vistaLogin.getPuerto();
 
-            if (sistema.iniciarUsuario(usuario, puerto))  {
-                vistaInicio.setVisible(true);
-                vistaLogin.setVisible(false);
-                this.vistaInicio.setBienvenida(usuario);
-            } else {
-                vistaLogin.mostrarModalError("Error al iniciar sesion");
+            try {
+                sistema.iniciarUsuario(usuario, puerto);
+            } catch (PuertoInvalidoException ex) {
+                vistaLogin.mostrarModalError(ex.getMessage());
             }
         }
     }
 }
-

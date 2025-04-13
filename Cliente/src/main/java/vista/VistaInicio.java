@@ -4,6 +4,7 @@ import modelo.Conversacion;
 import modelo.Mensaje;
 import modelo.Usuario;
 import sistema.MensajeriaP2P;
+import sistema.Sistema;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -11,6 +12,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class VistaInicio extends JFrame implements IVistaInicio {
@@ -106,17 +108,6 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         this.lblCartelBienvenida = new JLabel("Bienvenido/a");
         panel_norte.add(this.lblCartelBienvenida);
 
-        /**
-
-        this.txtf_buscar = new JTextField();
-        this.txtf_buscar.setText("a quien buscas?");
-        panel_norte.add(this.txtf_buscar);
-        this.txtf_buscar.setColumns(10);
-
-        this.btnBuscar = new JButton("buscar");
-        panel_norte.add(this.btnBuscar);
-    */
-
         // Desactivar el botón de enviar por defecto
         btnEnviar.setEnabled(false);
 
@@ -187,50 +178,23 @@ public class VistaInicio extends JFrame implements IVistaInicio {
     public void actualizarPanelChat(Conversacion conversacion) {
         this.panel_chat.setVisible(true);
         lista_chat.removeAll();
-        Usuario usuarioAgendado = MensajeriaP2P.getInstance().existeUsuario(conversacion.getUsuario().getIp(), conversacion.getUsuario().getPuerto());
         for (Mensaje mensaje : conversacion.getMensajes()) {
-            lista_chat.add("[" + mensaje.getTimestamp().getTime() + "]" + mensaje.getEmisor().getNickname() + ":\n" + mensaje.toString());
+            lista_chat.add("[" + mensaje.getTimestampCreado().getTime() + "]" + mensaje.getEmisor() + ":\n" + mensaje);
         }
         lista_chat.revalidate();
         lista_chat.repaint();
         setConversacion(conversacion);
-        // Si la conversación está activa, habilitar el botón de enviar y el campo de texto
-        btnEnviar.setEnabled(conversacion.isActiva());
-        txtf_mensaje.setEnabled(conversacion.isActiva());
 
-        // Si no hay conversaciones activas, deshabilitar el panel de chat
-        if (conversacion == null || !conversacion.isActiva()) {
-            panel_chat.setVisible(false);
-        } else {
-            panel_chat.setVisible(true);
-        }
+        panel_chat.setVisible(true);
     }
 
-    public void actualizarListaConversaciones() {
-        listModelConversaciones.clear();
-        for (Conversacion conversacion : MensajeriaP2P.getInstance().getUser().getConversacionesActivas()) {
-            listModelConversaciones.addElement(conversacion);
-        }
-    }
 
-    /*
-    //Change the border color of the element in the list
-    public void Notificar(Conversacion c) {
-        int index = listModelConversaciones.indexOf(c);
-        if (index != -1) {
-            listaConversaciones.setSelectionBackground(Color.BLUE);
-            listaConversaciones.setSelectionForeground(Color.WHITE);
-            listaConversaciones.setSelectedIndex(index);
-            listaConversaciones.setBorder(BorderFactory.createLineBorder(Color.RED, 2));
-        }
-    }
-    */
     private class CustomListCellRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             Component component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             Conversacion conversacion = (Conversacion) value;
-            if (isSelected || MensajeriaP2P.getInstance().getVistaInicio().getConversacionActiva() == conversacion) {
+            if (isSelected || Sistema.getVistaInicio().getConversacionActiva() == conversacion) {
                 component.setBackground(Color.BLUE);
                 component.setForeground(Color.WHITE);
                 ((JComponent) component).setBorder(null);
@@ -291,37 +255,58 @@ public class VistaInicio extends JFrame implements IVistaInicio {
     }
 
     // Modales
-    public Usuario mostrarModalNuevaConversacion() {
-        ArrayList<Usuario> contactosSinConversacion = MensajeriaP2P.getInstance().getUser().getContactosSinConversacion();
-        Usuario[] opciones = contactosSinConversacion.toArray(new Usuario[0]);
-        return (Usuario) JOptionPane.showInputDialog(
+    public Usuario mostrarModalNuevaConversacion(ArrayList<String> opciones) {
+        JOptionPane.showInputDialog(
                 this,
                 "Seleccione un contacto para iniciar una nueva conversación:",
                 "Nueva Conversación",
                 JOptionPane.PLAIN_MESSAGE,
                 null,
-                opciones,
-                opciones[0]
+                opciones.toArray(),
+                opciones.getFirst()
         );
     }
 
-    public String[] mostrarModalAgregarContacto() {
-        JTextField nombreField = new JTextField();
-        JTextField ipField = new JTextField();
-        JTextField puertoField = new JTextField();
-
-        Object[] message = {
-                "Nombre:", nombreField,
-                "IP:", ipField,
-                "Puerto:", puertoField
-        };
-
-        int option = JOptionPane.showConfirmDialog(this, message, "Agregar Usuario", JOptionPane.OK_CANCEL_OPTION);
-        if (option == JOptionPane.OK_OPTION) {
-            return new String[]{nombreField.getText(), ipField.getText(), puertoField.getText()};
-        } else {
+    public ArrayList<String> mostrarModalAgregarContacto(ArrayList<String> posiblesContactos) {
+        if (posiblesContactos == null || posiblesContactos.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No hay contactos disponibles para agregar.", "Información", JOptionPane.INFORMATION_MESSAGE);
             return null;
         }
+
+        String[] opciones = posiblesContactos.toArray(new String[0]);
+        JComboBox<String> comboBox = new JComboBox<>(opciones);
+        JTextField nicknameField = new JTextField();
+
+        Object[] message = {
+                "Seleccione un contacto para agregar:", comboBox,
+                "Ingrese un nickname personal:", nicknameField
+        };
+
+        int option = JOptionPane.showConfirmDialog(
+                this,
+                message,
+                "Agregar Contacto",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (option == JOptionPane.OK_OPTION) {
+            String seleccion = (String) comboBox.getSelectedItem();
+            String nickname = nicknameField.getText().trim();
+
+            if (seleccion != null) {
+                ArrayList<String> respuesta = new ArrayList<>();
+                respuesta.add(seleccion);
+                if (nickname.isEmpty()) {
+                    respuesta.add(seleccion);
+                }
+                return respuesta;
+            } else {
+                JOptionPane.showMessageDialog(this, "Debe seleccionar un contacto y proporcionar un nickname.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
+        return null;
     }
 
     public void mostrarModalError(String s) {
