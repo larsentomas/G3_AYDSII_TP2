@@ -1,5 +1,7 @@
 package modelo;
 
+import sistema.Sistema;
+
 import java.util.*;
 import java.io.Serializable;
 
@@ -16,7 +18,7 @@ public class Solicitud implements Serializable {
 
     public Solicitud(String tipo) {
         this.tipo = tipo;
-        this.datos = Map.of();
+        this.datos = Map.of("usuario", Sistema.getInstance().getUsuarioLogueado().getNombre());
     }
 
     public Solicitud(String tipo, Map<String, Object> datos) {

@@ -1,22 +1,22 @@
 package servidor;
 
+import excepciones.UsuarioExistenteException;
 import modelo.Conversacion;
 import modelo.Mensaje;
+import modelo.Respuesta;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Servidor {
 
     private ServerSocket serverSocket;
-    private ConcurrentHashMap<String, HandlerClientes> directorio = new ConcurrentHashMap<>();
+    private HashMap<String, UsuarioServidor> directorio = new HashMap<>();
     private final Map<String, Queue<Mensaje>> colaMensajes = new ConcurrentHashMap<>();
 
 
@@ -33,8 +33,6 @@ public class Servidor {
             while (true) {
                 Socket socket = serverSocket.accept();
 
-
-
                 HandlerClientes handler = new HandlerClientes(socket, this);
                 new Thread(handler).start();
             }
@@ -44,10 +42,20 @@ public class Servidor {
     }
 
     public void routeMensaje(Mensaje mensaje, Conversacion c) {
-        HandlerClientes receptor = directorio.get(c.getIntegrante());
+        UsuarioServidor receptor = directorio.get(c.getIntegrante());
         if (receptor != null) {
             if (receptor.isConectado()) {
-                receptor.enviarRespuesta("MENSAJE_RECIBIDO", Map.of("mensaje", mensaje), false, null);
+                Respuesta respuesta = new Respuesta(Respuesta.MENSAJE_RECIBIDO, Map.of("mensaje", mensaje), false, null);
+                new Thread(() -> {
+                    try (Socket socket = new Socket(receptor.getIp(), receptor.getPuerto())) {
+                        ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+                        outputStream.writeObject(respuesta);
+                        outputStream.flush();
+                        System.out.println("Mensaje enviado a " + c.getIntegrante());
+                    } catch (IOException e) {
+                        System.out.println("Error al enviar el mensaje a " + c.getIntegrante());
+                    }
+                }).start();
             } else {
                 colaMensajes.computeIfAbsent(c.getIntegrante(), k -> new LinkedList<>()).add(mensaje);
                 System.out.println("Stored message for " + c.getIntegrante());
@@ -61,39 +69,30 @@ public class Servidor {
         return colaMensajes.remove(username);
     }
 
-    public boolean logearCliente(String username, HandlerClientes handler) {
-        HandlerClientes existente = directorio.get(username);
-
-        if (existente == null) {
-            directorio.put(username, handler);
-            return true;
+    public void logearCliente(String usuario, String ip, int puerto) throws IOException, UsuarioExistenteException {
+        if (!directorio.containsKey(usuario)) {
+            UsuarioServidor nuevoUsuario = new UsuarioServidor(usuario, ip, puerto);
+            directorio.put(usuario, nuevoUsuario);
+            return;
+        } else {
+            UsuarioServidor usuarioExistente = directorio.get(usuario);
+            if (!usuarioExistente.isConectado()) {
+                usuarioExistente.setConectado(true);
+                return;
+            }
         }
-
-        if (existente == handler) {
-            return true;
-        }
-
-        if (!existente.isConectado()) {
-            try {
-                existente.getSocketRecepcion().close();
-            } catch (IOException ignored) {}
-
-            directorio.put(username, handler);
-            return true;
-        }
-
-        return false;
+        throw new UsuarioExistenteException(usuario);
     }
 
     public void eliminarCliente(String username){
         directorio.remove(username);
     }
 
-    public Set<String> getDatosDirectorio() {
-        return directorio.keySet();
+    public ArrayList<String> getDatosDirectorio() {
+        return new ArrayList<>(directorio.keySet());
     }
 
-    public HandlerClientes getClientHandler(String username) {
+    public UsuarioServidor getUsuario(String username) {
         return directorio.get(username);
     }
 }
