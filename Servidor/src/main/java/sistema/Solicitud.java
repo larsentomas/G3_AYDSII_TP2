@@ -4,10 +4,10 @@ import java.util.Map;
 
 public class Solicitud {
     private final String tipo;
-    private final Map<String, String> datos;
+    private final Map<String, Object> datos;
 
 
-    public Solicitud(String tipo, Map<String, String> datos) {
+    public Solicitud(String tipo, Map<String, Object> datos) {
         this.tipo = tipo;
         this.datos = datos;
     }
@@ -16,7 +16,7 @@ public class Solicitud {
         return tipo;
     }
 
-    public Map<String, String> getDatos() {
+    public Map<String, Object> getDatos() {
         return datos;
     }
 }

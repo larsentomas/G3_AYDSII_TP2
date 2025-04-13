@@ -48,7 +48,7 @@ public class HandlerClientes implements Runnable {
                 else if (obj instanceof Solicitud request) {
                     switch (request.getTipo()) {
                         case "LOGIN" -> {
-                            String name = request.getDatos().get("username");
+                            String name = (String) request.getDatos().get("username");
 
                             if (name == null || name.isBlank()) {
                                 enviarRespuesta("LOGIN",Map.of(), true, "Nombre de usuario no valido");
@@ -84,8 +84,7 @@ public class HandlerClientes implements Runnable {
 
                         case "DIRECTORIO" -> {
                             Set<String> usernames = server.getAllUsernames();
-                            outputStream.writeObject(usernames);
-                            outputStream.flush();
+                            enviarRespuesta("DIRECTORIO", Map.of("usernames", usernames), false, null);
                             System.out.println("📒 Sent directory to " + username);
                         }
 
