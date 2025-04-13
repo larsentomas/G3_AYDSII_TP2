@@ -22,8 +22,6 @@ public class Comunicador implements Runnable {
             System.out.println("Conectando al servidor...");
             ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
             out.writeObject(solicitud);
-            System.out.println("Solicitud enviada: " + solicitud);
-            out.flush();
 
         } catch (IOException e) {
             System.err.println("Error al enviar el mensaje: " + e.getMessage());

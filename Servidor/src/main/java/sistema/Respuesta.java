@@ -3,6 +3,9 @@ package sistema;
 import java.util.Map;
 
 public class Respuesta {
+    private static String LOGIN = "LOGIN";
+    private static String DIRECTORIO = "DIRECTORIO";
+
     private final String tipo;
     private final Map<String, Object> datos;
     private final boolean error;
