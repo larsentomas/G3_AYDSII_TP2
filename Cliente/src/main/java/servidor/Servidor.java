@@ -34,6 +34,10 @@ public class Servidor {
                 Socket socket = serverSocket.accept();
                 System.out.println("Conexión aceptada, iniciando HandlerClientes...");
                 new Thread(new HandlerClientes(socket, this)).start();
+                System.out.println("Usuarios hasta ahora");
+                for (Map.Entry<String, UsuarioServidor> entry : directorio.entrySet()) {
+                    System.out.println("Usuario: " + entry.getKey() + ", IP: " + entry.getValue().getIp() + ", Puerto: " + entry.getValue().getPuerto());
+                }
                 System.out.flush();
             }
         } catch (IOException e) {
@@ -79,6 +83,8 @@ public class Servidor {
             UsuarioServidor usuarioExistente = directorio.get(usuario);
             if (!usuarioExistente.isConectado()) {
                 usuarioExistente.setConectado(true);
+                usuarioExistente.setIp(ip);
+                usuarioExistente.setPuerto(puerto);
                 return;
             }
         }

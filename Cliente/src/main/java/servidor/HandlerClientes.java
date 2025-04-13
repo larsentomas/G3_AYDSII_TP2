@@ -108,17 +108,17 @@ public class HandlerClientes implements Runnable {
     }
 
     private void handleLogout(String usuario){
-        this.conectado = false;
+        servidor.getUsuario(usuario).setConectado(false);
         enviarRespuestaCliente(usuario, Respuesta.LOGOUT, Map.of(), false, null);
     }
 
     private void handleDirectorio(String usuario){
-        ArrayList<String> usernames = servidor.getDatosDirectorio();
-        if(usernames == null || usernames.isEmpty()){
+        ArrayList<String> usuarios = servidor.getDatosDirectorio();
+        if(usuarios == null || usuarios.isEmpty()){
             enviarRespuestaCliente(usuario, Respuesta.DIRECTORIO, Map.of(), true, "No hay usuarios en el directorio.");
             return;
         }else{
-            enviarRespuestaCliente(usuario, Respuesta.DIRECTORIO, Map.of("usernames", usernames), false, null);
+            enviarRespuestaCliente(usuario, Respuesta.DIRECTORIO, Map.of("usuarios", usuarios), false, null);
         }
         System.out.println("📒 Sent directory to " + usuario);
     }

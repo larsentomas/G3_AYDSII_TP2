@@ -50,6 +50,7 @@ public class Controlador implements ActionListener {
             if (usuario_conversacion != null) {
                 Conversacion c = sistema.crearConversacion(usuario_conversacion);
                 vistaInicio.setConversacion(c);
+                vistaInicio.actualizarPanelChat(c);
             }
         } else if (e.getActionCommand().equalsIgnoreCase("AGREGAR_CONTACTO")) {
             try {

@@ -23,11 +23,22 @@ public class UsuarioLogueado extends Usuario {
         this.conversaciones = new ArrayList<>();
     }
 
-    public Conversacion crearConversacion(Usuario usuario) {
-        Conversacion conversacion = new Conversacion(usuario.getNombre());
+    // usuario es el apodo
+    public Conversacion crearConversacion(String apodo) {
+        String u = getContacto(apodo);
+        Conversacion conversacion = new Conversacion(u);
         this.agregarConversacion(conversacion);
         conversacion.setNotificado(true);
         return conversacion;
+    }
+
+    public String getContacto(String username) {
+        for (String u : contactos.values()) {
+            if (u.equals(username)) {
+                return u;
+            }
+        }
+        return null;
     }
 
     public ArrayList<String> getContactosSinConversacion() {
@@ -41,7 +52,7 @@ public class UsuarioLogueado extends Usuario {
                 }
             }
             if (!tieneConversacion) {
-                contactosSinConversacion.add(contacto);
+                contactosSinConversacion.add(getContactos().get(contacto));
             }
         }
         return contactosSinConversacion;

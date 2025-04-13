@@ -83,9 +83,7 @@ public class Sistema {
 
     public Conversacion crearConversacion(String usuario) {
         // Crear una nueva conversacion
-        Conversacion conversacion = new Conversacion(usuario);
-        usuarioLogueado.agregarConversacion(conversacion);
-        return conversacion;
+        return usuarioLogueado.crearConversacion(usuario);
     }
 
     // comunicacion con servidor
@@ -118,12 +116,12 @@ public class Sistema {
     }
 
     public void recibirOpcionesContactos(Respuesta respuesta) {
-        ArrayList<String> posiblesContactos = (ArrayList<String>) respuesta.getDatos().get("contactos");
+        ArrayList<String> posiblesContactos = (ArrayList<String>) respuesta.getDatos().get("usuarios");
         if (!getNoAgendados(posiblesContactos).isEmpty()) {
             // Mostrar el modal para agregar contacto con las opciones de posiblesContactos
             ArrayList<String> nuevoContacto = vistaInicio.mostrarModalAgregarContacto(posiblesContactos);
             try {
-                getUsuarioLogueado().agregarContacto(nuevoContacto.get(0), nuevoContacto.get(1));
+                getUsuarioLogueado().agregarContacto(nuevoContacto.getFirst(), nuevoContacto.get(1));
                 vistaInicio.mostrarModalExito("Contacto agregado exitosamente.");
             } catch(ContactoRepetidoException e) {
                 vistaInicio.mostrarModalError("El contacto ya existe.");

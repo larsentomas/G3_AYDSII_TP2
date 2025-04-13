@@ -309,6 +309,8 @@ public class VistaInicio extends JFrame implements IVistaInicio {
                 respuesta.add(seleccion);
                 if (nickname.isEmpty()) {
                     respuesta.add(seleccion);
+                } else {
+                    respuesta.add(nickname);
                 }
                 return respuesta;
             } else {

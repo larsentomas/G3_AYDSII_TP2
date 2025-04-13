@@ -26,6 +26,18 @@ public class Usuario implements Serializable {
         return puerto;
     }
 
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public void setPuerto(int puerto) {
+        this.puerto = puerto;
+    }
+
     @Override
     public String toString() {
         return nombre;
