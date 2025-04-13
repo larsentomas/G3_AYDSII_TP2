@@ -1,11 +1,9 @@
 package modelo;
 
-import sistema.Sistema;
-
-import java.sql.Timestamp;
 import java.util.*;
+import java.io.Serializable;
 
-public class Solicitud {
+public class Solicitud implements Serializable {
     public final static String LOGIN = "LOGIN";
     public final static String DIRECTORIO = "DIRECTORIO";
     public final static String LOGOUT = "LOGOUT";
@@ -16,19 +14,14 @@ public class Solicitud {
     private final Map<String, Object> datos;
 
 
-    public Solicitud(String tipo, String usuario) {
-        this.tipo = tipo;
-
-        if (tipo.equalsIgnoreCase(LOGIN)) {
-            this.datos = Map.of("usuario", usuario);
-        } else {
-            this.datos = Map.of();
-        }
-    }
-
     public Solicitud(String tipo) {
         this.tipo = tipo;
         this.datos = Map.of();
+    }
+
+    public Solicitud(String tipo, Map<String, Object> datos) {
+        this.tipo = tipo;
+        this.datos = datos;
     }
 
     // Para enviar mensaje
@@ -46,5 +39,10 @@ public class Solicitud {
 
     public Map<String, Object> getDatos() {
         return datos;
+    }
+
+    @Override
+    public String toString() {
+        return "Solicitud tipo " + tipo + " con datos: " + datos;
     }
 }

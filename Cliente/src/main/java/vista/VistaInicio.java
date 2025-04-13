@@ -3,7 +3,6 @@ package vista;
 import modelo.Conversacion;
 import modelo.Mensaje;
 import modelo.Usuario;
-import sistema.MensajeriaP2P;
 import sistema.Sistema;
 
 import javax.swing.*;
@@ -12,7 +11,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class VistaInicio extends JFrame implements IVistaInicio {
@@ -255,16 +253,28 @@ public class VistaInicio extends JFrame implements IVistaInicio {
     }
 
     // Modales
-    public Usuario mostrarModalNuevaConversacion(ArrayList<String> opciones) {
-        JOptionPane.showInputDialog(
+    public String mostrarModalNuevaConversacion(ArrayList<String> opciones) {
+        if (opciones == null || opciones.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No hay contactos disponibles para iniciar una conversación.", "Información", JOptionPane.INFORMATION_MESSAGE);
+            return null;
+        }
+
+        String seleccion = (String) JOptionPane.showInputDialog(
                 this,
                 "Seleccione un contacto para iniciar una nueva conversación:",
                 "Nueva Conversación",
                 JOptionPane.PLAIN_MESSAGE,
                 null,
                 opciones.toArray(),
-                opciones.getFirst()
+                opciones.get(0)
         );
+
+        if (seleccion == null) {
+            return null; // User cancelled the dialog
+        }
+
+        return seleccion; // Return the selected contact or null if no selection was made
+
     }
 
     public ArrayList<String> mostrarModalAgregarContacto(ArrayList<String> posiblesContactos) {

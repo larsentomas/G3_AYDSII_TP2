@@ -43,11 +43,11 @@ public class Controlador implements ActionListener {
             }
 
             // Si hay contacto para iniciar conversacion --> mostrar modal
-            Usuario usuario_conversacion = vistaInicio.mostrarModalNuevaConversacion(opciones);
+            String usuario_conversacion = vistaInicio.mostrarModalNuevaConversacion(opciones);
 
             // Si el usuario no es null --> crear conversacion
             if (usuario_conversacion != null) {
-                Conversacion c = sistema.crearConversacion(usuario_conversacion.getNombre());
+                Conversacion c = sistema.crearConversacion(usuario_conversacion);
                 vistaInicio.setConversacion(c);
             }
         } else if (e.getActionCommand().equalsIgnoreCase("AGREGAR_CONTACTO")) {

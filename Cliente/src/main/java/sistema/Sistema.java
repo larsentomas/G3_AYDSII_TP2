@@ -11,11 +11,9 @@ import vista.VistaLogin;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class Sistema {
 
@@ -63,7 +61,11 @@ public class Sistema {
 
     public static void setServidor() {
         // Abrir y leer el archivo de configuracion
-        ipServidor = "localhost";
+        try {
+            ipServidor = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
         portServidor = 8080;
     }
 
@@ -94,10 +96,12 @@ public class Sistema {
     }
 
     public void recibirObj(Object obj) {
+        System.out.println("Recibiendo objeto: " + obj.getClass().getName());
         if (obj instanceof Mensaje mensaje) {
             recibirMensaje(mensaje);
         } else if (obj instanceof Respuesta respuesta) {
             if (respuesta.getTipo().equalsIgnoreCase("LOGIN")) {
+                System.out.println("Respuesta de login");
                 if (respuesta.getError()) {
                     // Si el usuario no es valido, se le muestra un mensaje de error
                     vistaLogin.mostrarModalError("El usuario ya existe.");
@@ -141,6 +145,7 @@ public class Sistema {
     }
 
     public void recibirMensaje(Mensaje mensaje) {
+        System.out.println("Recibiendo mensaje: " + mensaje.getContenido());
         String emisor = mensaje.getEmisor();
 
         if (!usuarioLogueado.getContactos().containsKey(emisor)) { // si no conozco al emisor
@@ -209,7 +214,7 @@ public class Sistema {
             new Thread(new HandlerMensajes(usuarioLogueado)).start();
 
             // Iniciar el hilo para enviar mensajes
-            new Thread(new Comunicador(new Solicitud(Solicitud.LOGIN, usuarioLogueado.getNombre()), usuarioLogueado.getSocket())).start();
+            new Thread(new Comunicador(new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre())), usuarioLogueado.getSocket())).start();
 
             // El handler de mensajes esta a la espera de mensajes
             // El comunicador va avisarle al servidor que quiere hacer login con un nickname
