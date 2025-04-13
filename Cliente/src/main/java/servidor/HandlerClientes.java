@@ -18,7 +18,6 @@ public class HandlerClientes implements Runnable {
     private Socket socketEnvio;
     private Servidor server;
     private ObjectInputStream inputStream;
-    private ObjectOutputStream outputStream;
     private String username;
     private volatile boolean conectado = true;
 

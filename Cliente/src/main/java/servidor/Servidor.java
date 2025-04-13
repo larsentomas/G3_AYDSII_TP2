@@ -32,7 +32,9 @@ public class Servidor {
 
             while (true) {
                 Socket socket = serverSocket.accept();
-                System.out.println("Cliente conectado: " + socket.getInetAddress());
+
+
+
                 HandlerClientes handler = new HandlerClientes(socket, this);
                 new Thread(handler).start();
             }
