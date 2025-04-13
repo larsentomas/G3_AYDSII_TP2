@@ -1,7 +1,6 @@
 package modelo;
 
 import excepciones.ContactoRepetidoException;
-import excepciones.UsuarioExistenteException;
 
 import java.net.Socket;
 import java.util.ArrayList;
@@ -9,20 +8,19 @@ import java.util.HashMap;
 
 public class UsuarioLogueado extends Usuario {
 
-    private Socket socket;
     private HashMap<String, String> contactos;
     private ArrayList<Conversacion> conversaciones; // nombre : nickname nuestro
 
-    public UsuarioLogueado(Usuario u, Socket s) {
-        super(u.getNombre(), u.getIp(), u.getPuerto());
-        this.socket = s;
-    }
-
-    public UsuarioLogueado(String nickname, String ip, int puerto, Socket s) {
+    public UsuarioLogueado(String nickname, String ip, int puerto) {
         super(nickname, ip, puerto);
         this.contactos = new HashMap<>();
         this.conversaciones = new ArrayList<>();
-        this.socket = s;
+    }
+
+    public UsuarioLogueado(Usuario u) {
+        super(u.getNombre(), u.getIp(), u.getPuerto());
+        this.contactos = new HashMap<>();
+        this.conversaciones = new ArrayList<>();
     }
 
     public Conversacion crearConversacion(Usuario usuario) {
@@ -82,10 +80,6 @@ public class UsuarioLogueado extends Usuario {
 
     public void agregarConversacion(Conversacion conversacion) {
         this.conversaciones.add(conversacion);
-    }
-
-    public Socket getSocket() {
-        return socket;
     }
 
 }

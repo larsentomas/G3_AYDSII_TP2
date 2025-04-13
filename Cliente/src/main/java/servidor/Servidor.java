@@ -6,7 +6,6 @@ import modelo.Mensaje;
 import modelo.Respuesta;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -21,7 +20,7 @@ public class Servidor {
 
 
     public static void main(String[] args) throws IOException {
-        new Servidor().start(8080);
+        new Servidor().start(6000);
     }
 
     public void start(int port) {
@@ -31,13 +30,15 @@ public class Servidor {
             System.out.println("Servidor iniciado en el puerto " + port);
 
             while (true) {
+                System.out.println("Esperando conexiones...");
                 Socket socket = serverSocket.accept();
-
-                HandlerClientes handler = new HandlerClientes(socket, this);
-                new Thread(handler).start();
+                System.out.println("Conexión aceptada, iniciando HandlerClientes...");
+                new Thread(new HandlerClientes(socket, this)).start();
+                System.out.flush();
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println("Error en el servidor: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

@@ -13,28 +13,21 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 
 public class HandlerClientes implements Runnable {
     private Socket socketRecepcion;
-    private Socket socketEnvio;
-    private Servidor server;
+    private Servidor servidor;
     private ObjectInputStream inputStream;
-    private String username;
     private volatile boolean conectado = true;
 
-    public HandlerClientes(Socket socketRecepcion, Servidor server) throws IOException {
+    public HandlerClientes(Socket socketRecepcion, Servidor servidor) throws IOException {
         this.socketRecepcion = socketRecepcion;
-        this.server = server;
+        this.servidor = servidor;
         this.inputStream = new ObjectInputStream(socketRecepcion.getInputStream());
     }
 
     public boolean isConectado() {
         return conectado;
-    }
-
-    public String getUsername() {
-        return username;
     }
 
     public Socket getSocketRecepcion() {
@@ -44,47 +37,34 @@ public class HandlerClientes implements Runnable {
     @Override
     public void run() {
         try {
-            Object obj;
+            Object obj = inputStream.readObject();
             System.out.println("Esperando a leer obj");
-            while ((obj = inputStream.readObject()) != null) {
-                System.out.println("Recibido objeto: " + obj.getClass().getName());
-                if (obj instanceof Solicitud request) {
-                    switch (request.getTipo()) {
-                        case Solicitud.LOGIN -> {
-                            System.out.println("Peticion de login");
-                            handleLogin(request);
-                        }
-                        case Solicitud.LOGOUT -> {
-                            System.out.println("Peticion de logout");
-                            handleLogout(request.getDatos().get("usuario").toString());
-                        }
-                        case Solicitud.DIRECTORIO -> {
-                            System.out.println("Peticion de directorio");
-                            handleDirectorio(request.getDatos().get("usuario").toString());
-                        }
-                        case Solicitud.ENVIAR_MENSAJE -> {
-                            System.out.println("Peticion de mensaje enviado");
-                            handleEnviarMensaje(request);
-                        }
-                        default ->
-                                enviarRespuesta(request.getDatos().get("ipCliente").toString(), (int) request.getDatos().get("puertoCliente"), "UNKNOWN_REQUEST", Map.of(), true, "No se reconoce la solicitud");
+            if (obj instanceof Solicitud request) {
+                switch (request.getTipo()) {
+                    case Solicitud.LOGIN -> {
+                        System.out.println("Peticion de login");
+                        handleLogin(request);
                     }
+                    case Solicitud.LOGOUT -> {
+                        System.out.println("Peticion de logout");
+                        handleLogout(request.getDatos().get("usuario").toString());
+                    }
+                    case Solicitud.DIRECTORIO -> {
+                        System.out.println("Peticion de directorio");
+                        handleDirectorio(request.getDatos().get("usuario").toString());
+                    }
+                    case Solicitud.ENVIAR_MENSAJE -> {
+                        System.out.println("Peticion de mensaje enviado");
+                        handleEnviarMensaje(request);
+                    }
+                    default ->
+                            enviarRespuesta(request.getDatos().get("ipCliente").toString(), (int) request.getDatos().get("puertoCliente"), "UNKNOWN_REQUEST", Map.of(), true, "No se reconoce la solicitud");
                 }
             }
-
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Connection lost with " + username);
-        } finally {
-            if (username != null) {
-                conectado = false;
-                System.out.println(username + " disconnected.");
-            }
-
-            try {
-                socketRecepcion.close();
-            } catch (IOException ignored) {
-            }
+            System.out.println("Connection lost with client.");
         }
+        System.out.println("Closing connection with client.");
     }
 
     public void enviarRespuesta(String ip, int puerto, String tipo, Map<String, Object> datos, boolean error, String mensaje) {
@@ -93,14 +73,14 @@ public class HandlerClientes implements Runnable {
             ObjectOutputStream outputStream = new ObjectOutputStream(socketEnvio.getOutputStream());
             outputStream.writeObject(response);
             outputStream.flush();
+            System.out.println("Respuesta enviada a " + ip + ":" + puerto);
         } catch (IOException e) {
-            System.out.println("Failed to send message to " + username);
+            System.out.println("Failed to send message to " + ip + ":" + puerto);
         }
     }
 
     public void enviarRespuestaCliente(String usuario, String tipo, Map<String, Object> datos, boolean error, String mensaje) {
-        System.out.println("Intentado enviar respuesta tipo " + tipo);
-        UsuarioServidor usuarioServidor = server.getUsuario(usuario);
+        UsuarioServidor usuarioServidor = servidor.getUsuario(usuario);
         enviarRespuesta(usuarioServidor.getIp(), usuarioServidor.getPuerto(), tipo, datos, error, mensaje);
     }
 
@@ -116,7 +96,7 @@ public class HandlerClientes implements Runnable {
         }
 
         try {
-            server.logearCliente(name, ipCliente, puertoCliente);
+            servidor.logearCliente(name, ipCliente, puertoCliente);
             handleColaMensajes(name);
             enviarRespuestaCliente(name, Respuesta.LOGIN, Map.of(), false, null);
         } catch (IOException e) {
@@ -133,14 +113,14 @@ public class HandlerClientes implements Runnable {
     }
 
     private void handleDirectorio(String usuario){
-        ArrayList<String> usernames = server.getDatosDirectorio();
+        ArrayList<String> usernames = servidor.getDatosDirectorio();
         if(usernames == null || usernames.isEmpty()){
             enviarRespuestaCliente(usuario, Respuesta.DIRECTORIO, Map.of(), true, "No hay usuarios en el directorio.");
             return;
         }else{
             enviarRespuestaCliente(usuario, Respuesta.DIRECTORIO, Map.of("usernames", usernames), false, null);
         }
-        System.out.println("📒 Sent directory to " + username);
+        System.out.println("📒 Sent directory to " + usuario);
     }
 
     private void handleEnviarMensaje(Solicitud request){
@@ -153,16 +133,12 @@ public class HandlerClientes implements Runnable {
             return;
         }
 
-        if (!username.equals(mensaje.getEmisor())) {
-            enviarRespuestaCliente(usuario, Respuesta.ENVIAR_MENSAJE, Map.of(), true, "El emisor no es correcto.");
-            return;
-        }
-        server.routeMensaje(mensaje, c);
+        servidor.routeMensaje(mensaje, c);
         enviarRespuestaCliente(usuario, Respuesta.ENVIAR_MENSAJE, Map.of(), false, null);
     }
 
     private void handleColaMensajes(String usuario){
-        Queue<Mensaje> colaMensajes = server.getMensajesOffline(usuario);
+        Queue<Mensaje> colaMensajes = servidor.getMensajesOffline(usuario);
 
         if (colaMensajes != null) {
             for (Mensaje msg : colaMensajes) {

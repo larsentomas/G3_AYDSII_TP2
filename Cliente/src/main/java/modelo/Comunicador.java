@@ -8,21 +8,22 @@ import java.net.Socket;
 
 public class Comunicador implements Runnable {
     private Solicitud solicitud;
-    private Socket s;
-    private Sistema sistema = Sistema.getInstance();
+    private int puerto;
+    private String ip;
 
-    public Comunicador(Solicitud solicitud, Socket s) {
+    public Comunicador(Solicitud solicitud, int puerto, String ip) throws IOException {
         this.solicitud = solicitud;
-        this.s = s;
+        this.puerto = puerto;
+        this.ip = ip;
     }
 
     @Override
     public void run() {
-        try {
+        try (Socket s = new Socket(ip, puerto)) {
             System.out.println("Conectando al servidor...");
             ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
             out.writeObject(solicitud);
-
+            out.flush();
         } catch (IOException e) {
             System.err.println("Error al enviar el mensaje: " + e.getMessage());
         }

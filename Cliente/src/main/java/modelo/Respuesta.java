@@ -5,11 +5,11 @@ import java.io.Serializable;
 
 public class Respuesta implements Serializable {
 
-    public static String LOGIN = "LOGIN";
-    public static String LOGOUT = "LOGOUT";
-    public static String DIRECTORIO = "DIRECTORIO";
-    public static String ENVIAR_MENSAJE = "ENVIAR_MENSAJE";
-    public static String MENSAJE_RECIBIDO = "MENSAJE_RECIBIDO";
+    public final static String LOGIN = "LOGIN";
+    public final static String LOGOUT = "LOGOUT";
+    public final static String DIRECTORIO = "DIRECTORIO";
+    public final static String ENVIAR_MENSAJE = "ENVIAR_MENSAJE";
+    public final static String MENSAJE_RECIBIDO = "MENSAJE_RECIBIDO";
 
     private final String tipo;
     private final Map<String, Object> datos;
