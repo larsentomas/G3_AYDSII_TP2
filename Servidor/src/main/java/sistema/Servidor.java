@@ -5,7 +5,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
 
 public class Servidor {
 
@@ -25,11 +24,9 @@ public class Servidor {
             System.out.println("Servidor iniciado en el puerto " + port);
 
             while (true) {
-                // Accept incoming connections
                 Socket socket = serverSocket.accept();
                 System.out.println("Cliente conectado: " + socket.getInetAddress());
-
-                // Create a new handler for the client
+                
                 HandlerClientes handler = new HandlerClientes(socket, this);
                 new Thread(handler).start();
             }
@@ -56,21 +53,39 @@ public class Servidor {
         return colaMensajes.remove(username);
     }
 
-    public boolean registerClient(String username, HandlerClientes handler) {
-        HandlerClientes existe = directorio.get(username);
-        if (existe != null && existe.isConectado()) {
-            return false;
+    public boolean logearCliente(String username, HandlerClientes handler) {
+        HandlerClientes existente = directorio.get(username);
+
+        if (existente == null) {
+            directorio.put(username, handler);
+            return true;
         }
 
-        directorio.put(username, handler);
-        return true;
+        if (existente == handler) {
+            return true;
+        }
+
+        if (!existente.isConectado()) {
+            try {
+                existente.getSocket().close();
+            } catch (IOException ignored) {}
+
+            directorio.put(username, handler);
+            return true;
+        }
+
+        return false;
     }
 
-    public void removeClient(String username){
+    public void eliminarCliente(String username){
         directorio.remove(username);
     }
 
-    public Set<String> getAllUsernames() {
+    public Set<String> getDatosDirectorio() {
         return directorio.keySet();
+    }
+
+    public HandlerClientes getClientHandler(String username) {
+        return directorio.get(username);
     }
 }

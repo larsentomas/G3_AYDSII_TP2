@@ -2,7 +2,6 @@ package sistema;
 
 import java.io.*;
 import java.net.*;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -31,68 +30,33 @@ public class HandlerClientes implements Runnable {
         return username;
     }
 
+    public Socket getSocket() {
+        return socket;
+    }
+
     @Override
     public void run() {
         try {
             Object obj;
 
             while ((obj = inputStream.readObject()) != null) {
-
-                // Handle chat messages
-                if (obj instanceof Mensaje mensaje) {
-                    server.routeMensaje(mensaje);
-                    enviarRespuesta("MENSAJE_RECIBIDO", Map.of(), false, null);
-                }
-
-                // Handle protocol requests
-                else if (obj instanceof Solicitud request) {
+                if (obj instanceof Solicitud request) {
                     switch (request.getTipo()) {
                         case "LOGIN" -> {
-                            String name = (String) request.getDatos().get("username");
-
-                            if (name == null || name.isBlank()) {
-                                enviarRespuesta("LOGIN",Map.of(), true, "Nombre de usuario no valido");
-                                socket.close();
-                                return;
-                            }
-
-                            if (server.registerClient(name, this)) {
-                                this.username = name;
-                                this.conectado = true;
-                                enviarRespuesta("LOGIN", Map.of(), false,"");
-
-                                Queue<Mensaje> queued = server.getMensajesOffline(username);
-                                if (queued != null) {
-
-                                    for(Mensaje m:queued){
-                                        enviarRespuesta("MENSAJE_ENVIADO", Map.of("mensaje", m), false, "");
-                                    }
-                                }
-
-                            } else {
-                                enviarRespuesta("LOGIN", Map.of(), true, "Nombre de usuario ya en uso");
-                                socket.close();
-                                return;
-                            }
+                            handleLogin(request);
                         }
                         case "LOGOUT" -> {
-                            this.conectado = false;
-                            enviarRespuesta("LOGOUT", Map.of(), false, null);
-                            socket.close();
-                            return; // finalizar thread
+                            handleLogout();
                         }
-
                         case "DIRECTORIO" -> {
-                            Set<String> usernames = server.getAllUsernames();
-                            enviarRespuesta("DIRECTORIO", Map.of("usernames", usernames), false, null);
-                            System.out.println("📒 Sent directory to " + username);
+                            handleDirectorio();
                         }
-
+                        case "MENSAJE_ENVIADO" -> {
+                            handleEnviarMensaje(request);
+                        }
                         default -> enviarRespuesta("UNKNOWN_REQUEST", Map.of(), true, "No se reconoce la solicitud");
                     }
-                }
-
-                else {
+                } else {
                     System.out.println("⚠️ Unknown object received: " + obj.getClass().getName());
                     enviarRespuesta("UNKNOWN_OBJECT", Map.of(), true, "Objeto desconocido");
                 }
@@ -119,6 +83,76 @@ public class HandlerClientes implements Runnable {
             outputStream.flush();
         } catch (IOException e) {
             System.out.println("Failed to send message to " + username);
+        }
+    }
+
+    private void cerrarSocket() {
+        try {
+            socket.close();
+        } catch (IOException ignored) {}
+    }
+
+    //HANDLERS EVENTOS
+
+    private void handleLogin(Solicitud request){
+        String name = (String) request.getDatos().get("username");
+
+        if (name == null || name.isBlank()) {
+            enviarRespuesta("LOGIN",Map.of(), true, "Nombre de usuario no valido");
+            cerrarSocket();
+        }
+
+        if(server.logearCliente(name, this)){
+            this.username = name;
+            this.conectado = true;
+            handleColaMensajes(name);
+            enviarRespuesta("LOGIN", Map.of("username", name), false, null);
+        }else{
+            enviarRespuesta("LOGIN", Map.of(), true, "Error al iniciar sesion");
+            cerrarSocket();
+        }
+    }
+
+    private void handleLogout(){
+        this.conectado = false;
+        enviarRespuesta("LOGOUT", Map.of(), false, null);
+        cerrarSocket();
+    }
+
+    private void handleDirectorio(){
+        Set<String> usernames = server.getDatosDirectorio();
+        if(usernames == null || usernames.isEmpty()){
+            enviarRespuesta("DIRECTORIO", Map.of(), true, "No hay usuarios en el directorio.");
+            return;
+        }else{
+            enviarRespuesta("DIRECTORIO", Map.of("usernames", usernames), false, null);
+        }
+        System.out.println("📒 Sent directory to " + username);
+    }
+
+    private void handleEnviarMensaje(Solicitud request){
+        Mensaje msj = (Mensaje) request.getDatos().get("message");
+
+        if (!(msj instanceof Mensaje mensaje)) {
+            enviarRespuesta("SEND_MESSAGE", Map.of(), true, "Formato de mensaje no valido.");
+            return;
+        }
+
+        if (!username.equals(mensaje.getEmisor())) {
+            enviarRespuesta("SEND_MESSAGE", Map.of(), true, "El emisor no es correcto.");
+            return;
+        }
+        server.routeMensaje(mensaje);
+        enviarRespuesta("SEND_MESSAGE", Map.of(), false, null);
+    }
+
+    private void handleColaMensajes(String name){
+        Queue<Mensaje> colaMensajes = server.getMensajesOffline(name);
+
+        if (colaMensajes != null) {
+            for (Mensaje msg : colaMensajes) {
+                enviarRespuesta("MENSAJE_RECIBIDO", Map.of("mensaje", msg), false, null);
+            }
         }
     }
 }
