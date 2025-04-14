@@ -34,14 +34,8 @@ public class Servidor {
             System.out.println("Servidor iniciado en el puerto " + port);
 
             while (true) {
-                System.out.println("Esperando conexiones...");
                 Socket socket = serverSocket.accept();
-                System.out.println("Conexión aceptada, iniciando HandlerClientes...");
                 new Thread(new HandlerClientes(socket, this)).start();
-                System.out.println("Usuarios hasta ahora");
-                for (Map.Entry<String, UsuarioServidor> entry : directorio.entrySet()) {
-                    System.out.println("Usuario: " + entry.getKey() + ", IP: " + entry.getValue().getIp() + ", Puerto: " + entry.getValue().getPuerto());
-                }
                 System.out.flush();
             }
         } catch (IOException e) {
@@ -50,9 +44,8 @@ public class Servidor {
         }
     }
 
-    public void routeMensaje(Mensaje mensaje, Conversacion c) {
-        System.out.println("Enviando mensaje a " + c.getIntegrante());
-        UsuarioServidor receptor = directorio.get(c.getIntegrante());
+    public void routeMensaje(Mensaje mensaje, String recep) {
+        UsuarioServidor receptor = getUsuario(recep);
         if (receptor != null) {
             if (receptor.isConectado()) {
                 Respuesta respuesta = new Respuesta(Respuesta.MENSAJE_RECIBIDO, Map.of("mensaje", mensaje), false, null);
@@ -61,17 +54,16 @@ public class Servidor {
                         ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
                         outputStream.writeObject(respuesta);
                         outputStream.flush();
-                        System.out.println("Mensaje enviado a " + c.getIntegrante());
                     } catch (IOException e) {
-                        System.out.println("Error al enviar el mensaje a " + c.getIntegrante());
+                        System.out.println("Error al enviar el mensaje a " + receptor);
                     }
                 }).start();
             } else {
-                colaMensajes.computeIfAbsent(c.getIntegrante(), k -> new LinkedList<>()).add(mensaje);
-                System.out.println("Stored message for " + c.getIntegrante());
+                colaMensajes.computeIfAbsent(receptor.getNombre(), k -> new LinkedList<>()).add(mensaje);
+                System.out.println("Stored message for " + receptor.getNombre() + " in offline queue.");
             }
         } else {
-            System.out.println("Usuario " + c.getIntegrante() + " no encontrado.");
+            System.out.println("Usuario " + receptor + " no encontrado.");
         }
     }
 

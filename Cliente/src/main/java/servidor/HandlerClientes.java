@@ -38,27 +38,21 @@ public class HandlerClientes implements Runnable {
     public void run() {
         try {
             Object obj = inputStream.readObject();
-            System.out.println("Esperando a leer obj");
             if (obj instanceof Solicitud request) {
                 switch (request.getTipo()) {
                     case Solicitud.LOGIN -> {
-                        System.out.println("Peticion de login");
                         handleLogin(request);
                     }
                     case Solicitud.LOGOUT -> {
-                        System.out.println("Peticion de logout");
                         handleLogout(request.getDatos().get("usuario").toString());
                     }
                     case Solicitud.DIRECTORIO -> {
-                        System.out.println("Peticion de directorio");
                         handleDirectorio(request.getDatos().get("usuario").toString());
                     }
                     case Solicitud.ENVIAR_MENSAJE -> {
-                        System.out.println("Peticion de mensaje enviado");
                         handleEnviarMensaje(request);
                     }
                     case Solicitud.NUEVA_CONVERSACION -> {
-                        System.out.println("Peticion de nueva conversacion");
                         String usuario = (String) request.getDatos().get("usuario");
                         String usuarioConversacion = (String) request.getDatos().get("usuarioConversacion");
                         enviarRespuestaCliente(usuarioConversacion, Respuesta.NUEVA_CONVERSACION, Map.of("usuarioConversacion", usuario), false, null);
@@ -70,7 +64,6 @@ public class HandlerClientes implements Runnable {
         } catch (IOException | ClassNotFoundException e) {
             System.out.println("Connection lost with client.");
         }
-        System.out.println("Closing connection with client.");
     }
 
     public void enviarRespuesta(String ip, int puerto, String tipo, Map<String, Object> datos, boolean error, String mensaje) {
@@ -130,17 +123,17 @@ public class HandlerClientes implements Runnable {
     }
 
     private void handleEnviarMensaje(Solicitud request){
-        String usuario = (String) request.getDatos().get("usuario");
         Mensaje msj = (Mensaje) request.getDatos().get("mensaje");
-        Conversacion c = (Conversacion) request.getDatos().get("conversacion");
+        String usuarioEmisor = msj.getEmisor();
+        String usuarioReceptor = (String) request.getDatos().get("receptor");
 
         if (!(msj instanceof Mensaje mensaje)) {
-            enviarRespuestaCliente(usuario, Respuesta.ENVIAR_MENSAJE, Map.of(), true, "Formato de mensaje no valido.");
+            enviarRespuestaCliente(usuarioEmisor, Respuesta.ENVIAR_MENSAJE, Map.of(), true, "Formato de mensaje no valido.");
             return;
         }
 
-        servidor.routeMensaje(mensaje, c);
-        enviarRespuestaCliente(usuario, Respuesta.ENVIAR_MENSAJE, Map.of("mensaje", mensaje, "conversacion", c), false, null);
+        servidor.routeMensaje(mensaje, usuarioReceptor);
+        enviarRespuestaCliente(usuarioEmisor, Respuesta.ENVIAR_MENSAJE, Map.of("mensaje", mensaje, "receptor", usuarioReceptor), false, null);
     }
 
     private void handleColaMensajes(String usuario){

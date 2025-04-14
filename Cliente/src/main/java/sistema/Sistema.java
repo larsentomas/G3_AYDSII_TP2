@@ -84,7 +84,7 @@ public class Sistema {
     public Conversacion crearConversacion(String apodo) {
         // Crear una nueva conversacion
         String usuario = usuarioLogueado.getContacto(apodo);
-        Conversacion c = usuarioLogueado.crearConversacion(apodo);
+        Conversacion c = usuarioLogueado.crearConversacion(usuario);
         Solicitud sol = new Solicitud(Solicitud.NUEVA_CONVERSACION, Map.of("usuario", usuarioLogueado.getNombre(), "usuarioConversacion", usuario));
         try {
             new Thread(new Comunicador(sol, puertoServidor, ipServidor)).start();
@@ -97,7 +97,7 @@ public class Sistema {
     // comunicacion con servidor
 
     public void enviarMensaje(String contenido, Conversacion conversacion) throws IOException {
-        Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", new Mensaje(contenido, usuarioLogueado.getNombre()), "conversacion", conversacion, "usuario", usuarioLogueado.getNombre()));
+        Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", new Mensaje(contenido, usuarioLogueado.getNombre()), "receptor", conversacion.getIntegrante()));
         new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
     }
 
@@ -105,7 +105,20 @@ public class Sistema {
         System.out.println("Recibiendo objeto: " + obj.getClass().getName());
         if (obj instanceof Respuesta respuesta) {
             switch(respuesta.getTipo()) {
-                case Respuesta.MENSAJE_RECIBIDO -> recibirMensaje((Mensaje) respuesta.getDatos().get("mensaje"));
+                case Respuesta.MENSAJE_RECIBIDO -> {
+                    Mensaje mensaje = (Mensaje) respuesta.getDatos().get("mensaje");
+                    String emisor = mensaje.getEmisor();
+                    Conversacion conversacion = usuarioLogueado.getConversacionCon(emisor);
+
+                    agregarMensajeConversacion(mensaje, conversacion);
+
+                    if (conversacion == vistaInicio.getConversacionActiva()) {
+                        vistaInicio.actualizarPanelChat(conversacion);
+                    } else {
+                        // TODO: Notificar
+                    }
+
+                }
                 case Respuesta.DIRECTORIO -> recibirOpcionesContactos(respuesta);
                 case Respuesta.LOGIN -> {
                     System.out.println("Respuesta de login");
@@ -125,15 +138,21 @@ public class Sistema {
                         vistaInicio.mostrarModalError("El mensaje no se pudo enviar.");
                     } else {
                         // Si el mensaje se envio correctamente, se le muestra un mensaje de exito
-                        Conversacion c = (Conversacion) respuesta.getDatos().get("conversacion");
-                        usuarioLogueado.agregarMensajeaConversacion((Mensaje) respuesta.getDatos().get("mensaje"), c);
+                        Mensaje mensaje = (Mensaje) respuesta.getDatos().get("mensaje");
+                        String receptor = (String) respuesta.getDatos().get("receptor");
+                        Conversacion c = usuarioLogueado.getConversacionCon(receptor);
+                        usuarioLogueado.agregarMensajeaConversacion(mensaje, c);
                         vistaInicio.actualizarPanelChat(c);
                     }
                 }
                 case Respuesta.NUEVA_CONVERSACION -> {
                     String usuarioConversacion = (String) respuesta.getDatos().get("usuarioConversacion");
-
-                    crearConversacion(usuarioConversacion);
+                    try {
+                        usuarioLogueado.agregarContacto(usuarioConversacion, usuarioConversacion);
+                    } catch (ContactoRepetidoException e) {
+                        throw new RuntimeException(e);
+                    }
+                    usuarioLogueado.crearConversacion(usuarioConversacion);
                     vistaInicio.actualizarListaConversaciones();
                 }
             }
@@ -168,27 +187,8 @@ public class Sistema {
         return noAgendados;
     }
 
-    public void recibirMensaje(Mensaje mensaje) {
-        System.out.println("Recibiendo mensaje: " + mensaje.getContenido());
-        String emisor = mensaje.getEmisor();
-
-        if (!usuarioLogueado.getContactos().containsKey(emisor)) { // si no conozco al emisor
-            try {
-                usuarioLogueado.agregarContacto(mensaje.getEmisor(), mensaje.getEmisor());
-            } catch (ContactoRepetidoException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        agregarMensajeConversacion(mensaje, usuarioLogueado.getConversacionCon(emisor));
-        vistaInicio.actualizarListaConversaciones();
-    }
 
     public void agregarMensajeConversacion(Mensaje mensaje, Conversacion conversacion) {
-        if (conversacion == null) {
-            String emisor = mensaje.getEmisor();
-            conversacion = new Conversacion(emisor);
-        }
-        usuarioLogueado.agregarConversacion(conversacion);
         usuarioLogueado.agregarMensajeaConversacion(mensaje, conversacion);
 
         if (vistaInicio.getConversacionActiva() == conversacion) {

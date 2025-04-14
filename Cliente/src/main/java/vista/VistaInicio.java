@@ -134,6 +134,7 @@ public class VistaInicio extends JFrame implements IVistaInicio {
                 int selectedIndex = listaConversaciones.getSelectedIndex();
                 if (selectedIndex != -1) {
                     Conversacion selectedConversacion = listModelConversaciones.getElementAt(selectedIndex);
+                    setConversacion(selectedConversacion);
                     // Actualizar el estado de la conversación para que no se muestre en rojo
                     selectedConversacion.setNotificado(false);
                     // Forzar la renderización de la lista

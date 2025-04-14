@@ -23,10 +23,8 @@ public class UsuarioLogueado extends Usuario {
         this.conversaciones = new ArrayList<>();
     }
 
-    // usuario es el apodo
-    public Conversacion crearConversacion(String apodo) {
-        String u = getContacto(apodo);
-        Conversacion conversacion = new Conversacion(u);
+    public Conversacion crearConversacion(String usuario) {
+        Conversacion conversacion = new Conversacion(usuario);
         this.agregarConversacion(conversacion);
         conversacion.setNotificado(true);
         return conversacion;
@@ -80,7 +78,6 @@ public class UsuarioLogueado extends Usuario {
     }
 
     public void agregarMensajeaConversacion(Mensaje mensaje, Conversacion conversacion) {
-        System.out.println("Agregando mensaje " + mensaje + " a la conversación: " + conversacion);
         if (conversacion != null) {
             conversacion.agregarMensaje(mensaje);
         }
