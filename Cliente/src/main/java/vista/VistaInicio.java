@@ -179,7 +179,11 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         this.panel_chat.setVisible(true);
         lista_chat.removeAll();
         for (Mensaje mensaje : conversacion.getMensajes()) {
-            lista_chat.add("[" + mensaje.getTimestampCreado().getTime() + "]" + mensaje.getEmisor() + ":\n" + mensaje);
+            if (mensaje.getEmisor().equalsIgnoreCase(Sistema.getInstance().getUsuarioLogueado().getNombre())) {
+                lista_chat.add("[" + mensaje.getTimestampCreado().getTime() + "]" + mensaje.getEmisor() + ":\n" + mensaje);
+            } else {
+                lista_chat.add("[" + mensaje.getTimestampCreado().getTime() + "]" + Sistema.getInstance().getUsuarioLogueado().getApodo(mensaje.getEmisor()) + ":\n" + mensaje);
+            }
         }
         lista_chat.revalidate();
         lista_chat.repaint();
@@ -214,6 +218,11 @@ public class VistaInicio extends JFrame implements IVistaInicio {
                 component.setForeground(list.getForeground());
                 ((JComponent) component).setBorder(null);
             }
+
+            // Mostrar el apodo
+            String apodo = Sistema.getInstance().getUsuarioLogueado().getApodo(conversacion.getIntegrante());
+            setText(apodo != null ? apodo : conversacion.getIntegrante());
+
             return component;
         }
     }

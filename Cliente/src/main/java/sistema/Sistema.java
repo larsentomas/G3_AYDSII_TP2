@@ -115,7 +115,8 @@ public class Sistema {
                     if (conversacion == vistaInicio.getConversacionActiva()) {
                         vistaInicio.actualizarPanelChat(conversacion);
                     } else {
-                        // TODO: Notificar
+                        conversacion.setNotificado(true);
+                        vistaInicio.actualizarListaConversaciones();
                     }
 
                 }
@@ -147,10 +148,12 @@ public class Sistema {
                 }
                 case Respuesta.NUEVA_CONVERSACION -> {
                     String usuarioConversacion = (String) respuesta.getDatos().get("usuarioConversacion");
-                    try {
-                        usuarioLogueado.agregarContacto(usuarioConversacion, usuarioConversacion);
-                    } catch (ContactoRepetidoException e) {
-                        throw new RuntimeException(e);
+                    if (!usuarioLogueado.getContactos().containsKey(usuarioConversacion)) {
+                        try {
+                            usuarioLogueado.agregarContacto(usuarioConversacion, usuarioConversacion);
+                        } catch (ContactoRepetidoException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                     usuarioLogueado.crearConversacion(usuarioConversacion);
                     vistaInicio.actualizarListaConversaciones();

@@ -8,7 +8,7 @@ import java.util.HashMap;
 
 public class UsuarioLogueado extends Usuario {
 
-    private HashMap<String, String> contactos;
+    private HashMap<String, String> contactos; // usuario, apodo
     private ArrayList<Conversacion> conversaciones; // nombre : nickname nuestro
 
     public UsuarioLogueado(String nickname, String ip, int puerto) {
@@ -44,7 +44,7 @@ public class UsuarioLogueado extends Usuario {
         for (String contacto : contactos.keySet()) {
             boolean tieneConversacion = false;
             for (Conversacion conversacion : conversaciones) {
-                if (conversacion.getIntegrante().equals(contactos.get(contacto))) {
+                if (conversacion.getIntegrante().equals(contacto)) {
                     tieneConversacion = true;
                     break;
                 }
@@ -85,6 +85,10 @@ public class UsuarioLogueado extends Usuario {
 
     public HashMap<String, String> getContactos() {
         return contactos;
+    }
+
+    public String getApodo(String username) {
+        return contactos.get(username);
     }
 
     public void agregarConversacion(Conversacion conversacion) {

@@ -40,7 +40,7 @@ public class Mensaje implements Serializable {
 
     @Override
     public String toString() {
-        return "[" + this.timestampCreado.getTime() + "] " + this.emisor + ":" + this.contenido;
+        return this.contenido;
     }
 
 }
