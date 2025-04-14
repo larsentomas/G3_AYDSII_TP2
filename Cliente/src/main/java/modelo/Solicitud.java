@@ -6,6 +6,7 @@ import java.util.*;
 import java.io.Serializable;
 
 public class Solicitud implements Serializable {
+    public final static String NUEVA_CONVERSACION = "NUEVA_CONVERSACION";
     public final static String LOGIN = "LOGIN";
     public final static String DIRECTORIO = "DIRECTORIO";
     public final static String LOGOUT = "LOGOUT";

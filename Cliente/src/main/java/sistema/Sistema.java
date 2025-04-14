@@ -81,15 +81,23 @@ public class Sistema {
         return vistaLogin;
     }
 
-    public Conversacion crearConversacion(String usuario) {
+    public Conversacion crearConversacion(String apodo) {
         // Crear una nueva conversacion
-        return usuarioLogueado.crearConversacion(usuario);
+        String usuario = usuarioLogueado.getContacto(apodo);
+        Conversacion c = usuarioLogueado.crearConversacion(apodo);
+        Solicitud sol = new Solicitud(Solicitud.NUEVA_CONVERSACION, Map.of("usuario", usuarioLogueado.getNombre(), "usuarioConversacion", usuario));
+        try {
+            new Thread(new Comunicador(sol, puertoServidor, ipServidor)).start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return c;
     }
 
     // comunicacion con servidor
 
     public void enviarMensaje(String contenido, Conversacion conversacion) throws IOException {
-        Solicitud solicitud = new Solicitud(new Mensaje(contenido, usuarioLogueado.getNombre()), conversacion);
+        Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", new Mensaje(contenido, usuarioLogueado.getNombre()), "conversacion", conversacion, "usuario", usuarioLogueado.getNombre()));
         new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
     }
 
@@ -97,19 +105,36 @@ public class Sistema {
         System.out.println("Recibiendo objeto: " + obj.getClass().getName());
         if (obj instanceof Respuesta respuesta) {
             switch(respuesta.getTipo()) {
-                case Respuesta.ENVIAR_MENSAJE -> recibirMensaje((Mensaje) respuesta.getDatos().get("mensaje"));
+                case Respuesta.MENSAJE_RECIBIDO -> recibirMensaje((Mensaje) respuesta.getDatos().get("mensaje"));
                 case Respuesta.DIRECTORIO -> recibirOpcionesContactos(respuesta);
                 case Respuesta.LOGIN -> {
                     System.out.println("Respuesta de login");
                     if (respuesta.getError()) {
                         // Si el usuario no es valido, se le muestra un mensaje de error
+                        usuarioLogueado = null;
                         vistaLogin.mostrarModalError("El usuario ya existe.");
                     } else {
-                        usuarioLogueado = new UsuarioLogueado(usuarioLogueado);
                         vistaLogin.setVisible(false);
                         vistaInicio.setVisible(true);
                         vistaInicio.setBienvenida(usuarioLogueado.getNombre());
                     }
+                }
+                case Respuesta.ENVIAR_MENSAJE -> {
+                    if (respuesta.getError()) {
+                        // Si el mensaje no se pudo enviar, se le muestra un mensaje de error
+                        vistaInicio.mostrarModalError("El mensaje no se pudo enviar.");
+                    } else {
+                        // Si el mensaje se envio correctamente, se le muestra un mensaje de exito
+                        Conversacion c = (Conversacion) respuesta.getDatos().get("conversacion");
+                        usuarioLogueado.agregarMensajeaConversacion((Mensaje) respuesta.getDatos().get("mensaje"), c);
+                        vistaInicio.actualizarPanelChat(c);
+                    }
+                }
+                case Respuesta.NUEVA_CONVERSACION -> {
+                    String usuarioConversacion = (String) respuesta.getDatos().get("usuarioConversacion");
+
+                    crearConversacion(usuarioConversacion);
+                    vistaInicio.actualizarListaConversaciones();
                 }
             }
         }
@@ -155,6 +180,7 @@ public class Sistema {
             }
         }
         agregarMensajeConversacion(mensaje, usuarioLogueado.getConversacionCon(emisor));
+        vistaInicio.actualizarListaConversaciones();
     }
 
     public void agregarMensajeConversacion(Mensaje mensaje, Conversacion conversacion) {
@@ -222,6 +248,7 @@ public class Sistema {
             // caso 2: El servidor le dice que el nickname no existe, le envia un mensaje de exito al handler
 
         } catch (IOException e) {
+            usuarioLogueado = null;
             vistaLogin.mostrarModalError("Error al obtener la dirección IP local.");
         }
     }

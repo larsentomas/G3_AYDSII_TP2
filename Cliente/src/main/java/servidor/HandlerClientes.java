@@ -57,6 +57,12 @@ public class HandlerClientes implements Runnable {
                         System.out.println("Peticion de mensaje enviado");
                         handleEnviarMensaje(request);
                     }
+                    case Solicitud.NUEVA_CONVERSACION -> {
+                        System.out.println("Peticion de nueva conversacion");
+                        String usuario = (String) request.getDatos().get("usuario");
+                        String usuarioConversacion = (String) request.getDatos().get("usuarioConversacion");
+                        enviarRespuestaCliente(usuarioConversacion, Respuesta.NUEVA_CONVERSACION, Map.of("usuarioConversacion", usuario), false, null);
+                    }
                     default ->
                             enviarRespuesta(request.getDatos().get("ipCliente").toString(), (int) request.getDatos().get("puertoCliente"), "UNKNOWN_REQUEST", Map.of(), true, "No se reconoce la solicitud");
                 }
@@ -125,7 +131,7 @@ public class HandlerClientes implements Runnable {
 
     private void handleEnviarMensaje(Solicitud request){
         String usuario = (String) request.getDatos().get("usuario");
-        Mensaje msj = (Mensaje) request.getDatos().get("message");
+        Mensaje msj = (Mensaje) request.getDatos().get("mensaje");
         Conversacion c = (Conversacion) request.getDatos().get("conversacion");
 
         if (!(msj instanceof Mensaje mensaje)) {
@@ -134,7 +140,7 @@ public class HandlerClientes implements Runnable {
         }
 
         servidor.routeMensaje(mensaje, c);
-        enviarRespuestaCliente(usuario, Respuesta.ENVIAR_MENSAJE, Map.of(), false, null);
+        enviarRespuestaCliente(usuario, Respuesta.ENVIAR_MENSAJE, Map.of("mensaje", mensaje, "conversacion", c), false, null);
     }
 
     private void handleColaMensajes(String usuario){

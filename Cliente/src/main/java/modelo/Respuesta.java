@@ -5,6 +5,7 @@ import java.io.Serializable;
 
 public class Respuesta implements Serializable {
 
+    public final static String NUEVA_CONVERSACION = "NUEVA_CONVERSACION";
     public final static String LOGIN = "LOGIN";
     public final static String LOGOUT = "LOGOUT";
     public final static String DIRECTORIO = "DIRECTORIO";
@@ -39,5 +40,8 @@ public class Respuesta implements Serializable {
         return errorMensaje;
     }
 
-
+    @Override
+    public String toString() {
+        return "Respuesta tipo " + tipo;
+    }
 }

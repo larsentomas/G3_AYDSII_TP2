@@ -49,7 +49,6 @@ public class Controlador implements ActionListener {
             // Si el usuario no es null --> crear conversacion
             if (usuario_conversacion != null) {
                 Conversacion c = sistema.crearConversacion(usuario_conversacion);
-                vistaInicio.setConversacion(c);
                 vistaInicio.actualizarPanelChat(c);
             }
         } else if (e.getActionCommand().equalsIgnoreCase("AGREGAR_CONTACTO")) {
@@ -60,6 +59,7 @@ public class Controlador implements ActionListener {
             }
         } else if (e.getActionCommand().equalsIgnoreCase("ENVIAR_MENSAJE")) {
             String mensaje = vistaInicio.getMensaje();
+            vistaInicio.limpiarcampos();
             // Validar que el mensaje no esté vacío
             if (mensaje.isEmpty()) {
                 vistaInicio.mostrarModalError("El mensaje no puede estar vacío.");

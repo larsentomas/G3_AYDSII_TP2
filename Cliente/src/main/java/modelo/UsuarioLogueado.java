@@ -33,8 +33,8 @@ public class UsuarioLogueado extends Usuario {
     }
 
     public String getContacto(String username) {
-        for (String u : contactos.values()) {
-            if (u.equals(username)) {
+        for (String u : contactos.keySet()) {
+            if (contactos.get(u).equals(username)) {
                 return u;
             }
         }
@@ -80,6 +80,7 @@ public class UsuarioLogueado extends Usuario {
     }
 
     public void agregarMensajeaConversacion(Mensaje mensaje, Conversacion conversacion) {
+        System.out.println("Agregando mensaje " + mensaje + " a la conversación: " + conversacion);
         if (conversacion != null) {
             conversacion.agregarMensaje(mensaje);
         }
@@ -91,6 +92,10 @@ public class UsuarioLogueado extends Usuario {
 
     public void agregarConversacion(Conversacion conversacion) {
         this.conversaciones.add(conversacion);
+    }
+
+    public ArrayList<Conversacion> getConversaciones() {
+        return conversaciones;
     }
 
 }

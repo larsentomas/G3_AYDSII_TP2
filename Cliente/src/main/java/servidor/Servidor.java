@@ -7,8 +7,10 @@ import modelo.Respuesta;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,9 +20,11 @@ public class Servidor {
     private HashMap<String, UsuarioServidor> directorio = new HashMap<>();
     private final Map<String, Queue<Mensaje>> colaMensajes = new ConcurrentHashMap<>();
 
+    private final static int puertoServidor = 6000;
+
 
     public static void main(String[] args) throws IOException {
-        new Servidor().start(6000);
+        new Servidor().start(puertoServidor);
     }
 
     public void start(int port) {
@@ -47,6 +51,7 @@ public class Servidor {
     }
 
     public void routeMensaje(Mensaje mensaje, Conversacion c) {
+        System.out.println("Enviando mensaje a " + c.getIntegrante());
         UsuarioServidor receptor = directorio.get(c.getIntegrante());
         if (receptor != null) {
             if (receptor.isConectado()) {
@@ -75,20 +80,38 @@ public class Servidor {
     }
 
     public void logearCliente(String usuario, String ip, int puerto) throws IOException, UsuarioExistenteException {
-        if (!directorio.containsKey(usuario)) {
-            UsuarioServidor nuevoUsuario = new UsuarioServidor(usuario, ip, puerto);
-            directorio.put(usuario, nuevoUsuario);
-            return;
-        } else {
-            UsuarioServidor usuarioExistente = directorio.get(usuario);
-            if (!usuarioExistente.isConectado()) {
-                usuarioExistente.setConectado(true);
-                usuarioExistente.setIp(ip);
-                usuarioExistente.setPuerto(puerto);
+        if (validarDireccion(ip, puerto))
+            if (!directorio.containsKey(usuario)) {
+                UsuarioServidor nuevoUsuario = new UsuarioServidor(usuario, ip, puerto);
+                directorio.put(usuario, nuevoUsuario);
                 return;
+            } else {
+                UsuarioServidor usuarioExistente = directorio.get(usuario);
+                if (!usuarioExistente.isConectado()) {
+                    usuarioExistente.setConectado(true);
+                    usuarioExistente.setIp(ip);
+                    usuarioExistente.setPuerto(puerto);
+                    return;
+                }
+            }
+        throw new UsuarioExistenteException(usuario);
+    }
+
+    private boolean validarDireccion(String ip, int puerto) {
+        try {
+            String ipServdidor = InetAddress.getLocalHost().getHostAddress();
+            if (puerto == puertoServidor && ip.equalsIgnoreCase(ipServdidor)) {
+                return false;
+            }
+        } catch (UnknownHostException e) {
+            System.err.println("Error al obtener la dirección IP del servidor: " + e.getMessage());
+        }
+        for (UsuarioServidor usuario : directorio.values()) {
+            if (usuario.getIp().equals(ip) && usuario.getPuerto() == puerto) {
+                return false;
             }
         }
-        throw new UsuarioExistenteException(usuario);
+        return true;
     }
 
     public void eliminarCliente(String username){

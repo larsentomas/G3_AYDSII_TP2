@@ -174,6 +174,7 @@ public class VistaInicio extends JFrame implements IVistaInicio {
 
     // Manejo de conversaciones
     public void actualizarPanelChat(Conversacion conversacion) {
+        System.out.println("Mostrando conversacion con " + conversacion.getIntegrante() + " y mensajes " + conversacion.getMensajes());
         this.panel_chat.setVisible(true);
         lista_chat.removeAll();
         for (Mensaje mensaje : conversacion.getMensajes()) {
@@ -184,6 +185,13 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         setConversacion(conversacion);
 
         panel_chat.setVisible(true);
+    }
+
+    public void actualizarListaConversaciones() {
+        listModelConversaciones.clear();
+        for (Conversacion conversacion : Sistema.getInstance().getUsuarioLogueado().getConversaciones()) {
+            listModelConversaciones.addElement(conversacion);
+        }
     }
 
 
@@ -217,7 +225,7 @@ public class VistaInicio extends JFrame implements IVistaInicio {
     }
 
 
-                          // Getters y Setters
+    // Getters y Setters
     public JButton getBtnNuevoContacto() {
         return btnAgregarContacto;
     }
