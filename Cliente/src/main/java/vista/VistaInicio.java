@@ -242,6 +242,7 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         this.conversacion = conversacion;
     }
 
+    
     public void setBienvenida(String nombre) {
         this.lblCartelBienvenida.setText("Bienvenido/a  "+ nombre);
         // this.lblCartelBienvenida.setFont(new Font("Arial", Font.BOLD, 20));
