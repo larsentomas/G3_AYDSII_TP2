@@ -134,7 +134,7 @@ public class Sistema {
                     }
 
                 }
-                case Respuesta.DIRECTORIO -> recibirOpcionesContactos(respuesta);
+                case Respuesta.DIRECTORIO -> recibirListaUsuarios(respuesta);
                 case Respuesta.LOGIN -> {
                     System.out.println("Respuesta de login");
                     if (respuesta.getError()) {
@@ -197,12 +197,21 @@ public class Sistema {
 
     }
 
-    public void recibirOpcionesContactos(Respuesta respuesta) {
-        ArrayList<String> posiblesContactos = (ArrayList<String>) respuesta.getDatos().get("usuarios");
-        posiblesContactos.remove(usuarioLogueado.getNombre());
-        if (!getNoAgendados(posiblesContactos).isEmpty()) {
-            // Mostrar el modal para agregar contacto con las opciones de posiblesContactos
-            ArrayList<String> nuevoContacto = vistaInicio.mostrarModalAgregarContacto(posiblesContactos);
+    public void recibirListaUsuarios(Respuesta respuesta) {
+        ArrayList<String> listaUsuarios = (ArrayList<String>) respuesta.getDatos().get("usuarios");
+        listaUsuarios.remove(usuarioLogueado.getNombre()); // Me saco a mi mismo
+
+        ArrayList<String> noAgendados = new ArrayList<>();
+        for (String contacto : listaUsuarios) {
+            if (!usuarioLogueado.getContactos().containsKey(contacto)) {
+                noAgendados.add(contacto);
+            }
+        }
+
+
+        if (!noAgendados.isEmpty()) {
+            // Mostrar el modal para agregar contacto con las opciones de listaUsuarios
+            ArrayList<String> nuevoContacto = vistaInicio.mostrarModalAgregarContacto(noAgendados);
             if (nuevoContacto != null) {
                 try {
                     getUsuarioLogueado().agregarContacto(nuevoContacto.getFirst(), nuevoContacto.get(1));
@@ -214,18 +223,6 @@ public class Sistema {
         } else {
             vistaInicio.mostrarModalError("Ya se tienen todos los usuario agendados.");
         }
-    }
-
-    public ArrayList<String> getNoAgendados(ArrayList<String> posiblesContactos) {
-        ArrayList<String> noAgendados = new ArrayList<>();
-        if (posiblesContactos != null) {
-            for (String contacto : posiblesContactos) {
-                if (!usuarioLogueado.getContactos().containsKey(contacto)) {
-                    noAgendados.add(contacto);
-                }
-            }
-        }
-        return noAgendados;
     }
 
 
