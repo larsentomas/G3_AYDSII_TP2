@@ -2,25 +2,25 @@ package modelo;
 
 import excepciones.ContactoRepetidoException;
 
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class UsuarioLogueado extends Usuario {
 
     private HashMap<String, String> contactos; // usuario, apodo
-    private ArrayList<Conversacion> conversaciones; // nombre : nickname nuestro
+    private CopyOnWriteArrayList<Conversacion> conversaciones; // nombre : nickname nuestro
 
     public UsuarioLogueado(String nickname, String ip, int puerto) {
         super(nickname, ip, puerto);
         this.contactos = new HashMap<>();
-        this.conversaciones = new ArrayList<>();
+        this.conversaciones = new CopyOnWriteArrayList<>();
     }
 
     public UsuarioLogueado(Usuario u) {
         super(u.getNombre(), u.getIp(), u.getPuerto());
         this.contactos = new HashMap<>();
-        this.conversaciones = new ArrayList<>();
+        this.conversaciones = new CopyOnWriteArrayList<>();
     }
 
     public Conversacion crearConversacion(String usuario) {
@@ -81,9 +81,7 @@ public class UsuarioLogueado extends Usuario {
     }
 
     public void agregarMensajeaConversacion(Mensaje mensaje, Conversacion conversacion) {
-        if (conversacion != null) {
-            conversacion.agregarMensaje(mensaje);
-        }
+        conversacion.agregarMensaje(mensaje);
     }
 
     public HashMap<String, String> getContactos() {
@@ -98,7 +96,7 @@ public class UsuarioLogueado extends Usuario {
         this.conversaciones.add(conversacion);
     }
 
-    public ArrayList<Conversacion> getConversaciones() {
+    public CopyOnWriteArrayList<Conversacion> getConversaciones() {
         return conversaciones;
     }
 

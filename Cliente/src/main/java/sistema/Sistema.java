@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 
 public class Sistema {
 
@@ -115,13 +116,14 @@ public class Sistema {
                         try {
                             usuarioLogueado.agregarContacto(emisor, emisor);
                             conversacion = usuarioLogueado.crearConversacion(emisor);
+                            System.out.println("No existia conversacion con " + emisor + ", la creo");
                         } catch (ContactoRepetidoException e) {
                             throw new RuntimeException(e);
                         }
                     } else {
                         conversacion = usuarioLogueado.getConversacionCon(emisor);
                     }
-
+                    System.out.println("Conversacion es " + conversacion);
                     agregarMensajeConversacion(mensaje, conversacion);
 
                     if (conversacion == vistaInicio.getConversacionActiva()) {
@@ -170,8 +172,29 @@ public class Sistema {
                     usuarioLogueado.crearConversacion(usuarioConversacion);
                     vistaInicio.actualizarListaConversaciones();
                 }
+                case Respuesta.MENSAJES_OFFLINE -> recibirMensajesOffline(respuesta);
             }
         }
+    }
+
+    public void recibirMensajesOffline(Respuesta respuesta) {
+        Set<Map.Entry<String, Object>> keys = respuesta.getDatos().entrySet();
+
+        for (Map.Entry<String, Object> entry : keys) {
+            String usuario = entry.getKey();
+            ArrayList<Mensaje> mensajes = (ArrayList<Mensaje>) entry.getValue();
+            try {
+                usuarioLogueado.agregarContacto(usuario, usuario);
+                Conversacion conversacion = usuarioLogueado.crearConversacion(usuario);
+                for (Mensaje mensaje : mensajes) {
+                    usuarioLogueado.agregarMensajeaConversacion(mensaje, conversacion);
+                }
+            } catch (ContactoRepetidoException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        vistaInicio.actualizarListaConversaciones();
+
     }
 
     public void recibirOpcionesContactos(Respuesta respuesta) {
@@ -180,11 +203,13 @@ public class Sistema {
         if (!getNoAgendados(posiblesContactos).isEmpty()) {
             // Mostrar el modal para agregar contacto con las opciones de posiblesContactos
             ArrayList<String> nuevoContacto = vistaInicio.mostrarModalAgregarContacto(posiblesContactos);
-            try {
-                getUsuarioLogueado().agregarContacto(nuevoContacto.getFirst(), nuevoContacto.get(1));
-                vistaInicio.mostrarModalExito("Contacto agregado exitosamente.");
-            } catch(ContactoRepetidoException e) {
-                vistaInicio.mostrarModalError("El contacto ya existe.");
+            if (nuevoContacto != null) {
+                try {
+                    getUsuarioLogueado().agregarContacto(nuevoContacto.getFirst(), nuevoContacto.get(1));
+                    vistaInicio.mostrarModalExito("Contacto agregado exitosamente.");
+                } catch (ContactoRepetidoException e) {
+                    vistaInicio.mostrarModalError("El contacto ya existe.");
+                }
             }
         } else {
             vistaInicio.mostrarModalError("Ya se tienen todos los usuario agendados.");

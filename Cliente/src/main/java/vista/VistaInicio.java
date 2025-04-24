@@ -27,7 +27,7 @@ public class VistaInicio extends JFrame implements IVistaInicio {
     private List lista_chat;
     private JList listaConversaciones;
     private DefaultListModel<Conversacion> listModelConversaciones;
-    private Conversacion conversacion;
+    private Conversacion conversacion = null;
     private JPanel panel_chat;
     private JLabel lblCartelBienvenida;
 
@@ -175,7 +175,6 @@ public class VistaInicio extends JFrame implements IVistaInicio {
 
     // Manejo de conversaciones
     public void actualizarPanelChat(Conversacion conversacion) {
-        System.out.println("Mostrando conversacion con " + conversacion.getIntegrante() + " y mensajes " + conversacion.getMensajes());
         this.panel_chat.setVisible(true);
         lista_chat.removeAll();
         for (Mensaje mensaje : conversacion.getMensajes()) {

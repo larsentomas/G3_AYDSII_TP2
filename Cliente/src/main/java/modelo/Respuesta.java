@@ -11,6 +11,7 @@ public class Respuesta implements Serializable {
     public final static String DIRECTORIO = "DIRECTORIO";
     public final static String ENVIAR_MENSAJE = "ENVIAR_MENSAJE";
     public final static String MENSAJE_RECIBIDO = "MENSAJE_RECIBIDO";
+    public final static String MENSAJES_OFFLINE = "MENSAJES_OFFLINE";
 
     private final String tipo;
     private final Map<String, Object> datos;

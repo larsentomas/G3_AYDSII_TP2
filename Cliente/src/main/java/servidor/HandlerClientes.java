@@ -11,6 +11,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
@@ -137,13 +138,20 @@ public class HandlerClientes implements Runnable {
     }
 
     private void handleColaMensajes(String usuario){
+        HashMap<String, ArrayList<Mensaje>> mensajes = new HashMap<>();
         Queue<Mensaje> colaMensajes = servidor.getMensajesOffline(usuario);
 
         if (colaMensajes != null) {
             while (colaMensajes.peek() != null) {
                 Mensaje mensaje = colaMensajes.poll();
-                enviarRespuestaCliente(usuario, Respuesta.MENSAJE_RECIBIDO, Map.of("mensaje", mensaje), false, null);
+                ArrayList<Mensaje> mensajesUsuario = mensajes.computeIfAbsent(mensaje.getEmisor(), k -> new ArrayList<>());
+                mensajesUsuario.add(mensaje);
             }
         }
+
+        // Crea el map para enviar los mensajes por usuario
+        Map<String, Object> map = new HashMap<>(mensajes);
+        enviarRespuestaCliente(usuario, Respuesta.MENSAJES_OFFLINE, map, false, null);
+
     }
 }
