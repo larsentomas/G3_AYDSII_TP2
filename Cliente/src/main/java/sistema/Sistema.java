@@ -102,13 +102,25 @@ public class Sistema {
     }
 
     public void recibirObj(Object obj) {
-        System.out.println("Recibiendo objeto: " + obj.getClass().getName());
         if (obj instanceof Respuesta respuesta) {
             switch(respuesta.getTipo()) {
                 case Respuesta.MENSAJE_RECIBIDO -> {
                     Mensaje mensaje = (Mensaje) respuesta.getDatos().get("mensaje");
                     String emisor = mensaje.getEmisor();
-                    Conversacion conversacion = usuarioLogueado.getConversacionCon(emisor);
+
+                    System.out.println("Recibo " + mensaje + " de " + emisor);
+
+                    Conversacion conversacion;
+                    if (!usuarioLogueado.getContactos().containsKey(emisor)) {
+                        try {
+                            usuarioLogueado.agregarContacto(emisor, emisor);
+                            conversacion = usuarioLogueado.crearConversacion(emisor);
+                        } catch (ContactoRepetidoException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        conversacion = usuarioLogueado.getConversacionCon(emisor);
+                    }
 
                     agregarMensajeConversacion(mensaje, conversacion);
 
@@ -164,6 +176,7 @@ public class Sistema {
 
     public void recibirOpcionesContactos(Respuesta respuesta) {
         ArrayList<String> posiblesContactos = (ArrayList<String>) respuesta.getDatos().get("usuarios");
+        posiblesContactos.remove(usuarioLogueado.getNombre());
         if (!getNoAgendados(posiblesContactos).isEmpty()) {
             // Mostrar el modal para agregar contacto con las opciones de posiblesContactos
             ArrayList<String> nuevoContacto = vistaInicio.mostrarModalAgregarContacto(posiblesContactos);
@@ -260,6 +273,8 @@ public class Sistema {
         try {
             new Thread(new Comunicador(new Solicitud(Solicitud.LOGOUT), puertoServidor, ipServidor)).start();
             usuarioLogueado = null;
+            vistaInicio.setVisible(false);
+            System.exit(0);
         } catch (IOException e) {
             vistaLogin.mostrarModalError("Error al cerrar la sesión.");
         }

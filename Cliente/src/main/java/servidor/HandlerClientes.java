@@ -140,8 +140,9 @@ public class HandlerClientes implements Runnable {
         Queue<Mensaje> colaMensajes = servidor.getMensajesOffline(usuario);
 
         if (colaMensajes != null) {
-            for (Mensaje msg : colaMensajes) {
-                enviarRespuestaCliente(usuario, Respuesta.MENSAJE_RECIBIDO, Map.of("mensaje", msg), false, null);
+            while (colaMensajes.peek() != null) {
+                Mensaje mensaje = colaMensajes.poll();
+                enviarRespuestaCliente(usuario, Respuesta.MENSAJE_RECIBIDO, Map.of("mensaje", mensaje), false, null);
             }
         }
     }

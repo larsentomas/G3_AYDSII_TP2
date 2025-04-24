@@ -52,14 +52,17 @@ public class UsuarioLogueado extends Usuario {
             if (!tieneConversacion) {
                 contactosSinConversacion.add(getContactos().get(contacto));
             }
+            System.out.print("Los contactos sin conversacion son " + contactosSinConversacion);
         }
         return contactosSinConversacion;
     }
 
     public Conversacion getConversacionCon(String contacto) {
-        for (Conversacion conversacion : conversaciones) {
-            if (conversacion.getIntegrante().equals(contacto)) {
-                return conversacion;
+        if (conversaciones != null) {
+            for (Conversacion conversacion : conversaciones) {
+                if (conversacion.getIntegrante().equals(contacto)) {
+                    return conversacion;
+                }
             }
         }
         return null;

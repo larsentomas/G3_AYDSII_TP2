@@ -20,7 +20,6 @@ public class ReceptorRespuestas implements Runnable {
         try (ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
             try {
                 Object obj = in.readObject();
-                System.out.println("Objeto recibido: " + obj.getClass().getName());
                 s.recibirObj(obj);
             } catch (ClassNotFoundException e) {
                 System.err.println("Class not found: " + e.getMessage());

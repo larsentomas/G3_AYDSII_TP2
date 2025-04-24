@@ -23,7 +23,7 @@ public class Servidor {
     private final static int puertoServidor = 6000;
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         new Servidor().start(puertoServidor);
     }
 
@@ -59,11 +59,16 @@ public class Servidor {
                     }
                 }).start();
             } else {
-                colaMensajes.computeIfAbsent(receptor.getNombre(), k -> new LinkedList<>()).add(mensaje);
-                System.out.println("Stored message for " + receptor.getNombre() + " in offline queue.");
+                if (!colaMensajes.containsKey(receptor.getNombre())) {
+                    System.out.println("No existia cola de mensajes para el usuario, le creo una");
+                    colaMensajes.put(receptor.getNombre(), new LinkedList<>());
+                }
+                Queue<Mensaje> mensajes = colaMensajes.get(receptor.getNombre());
+                mensajes.add(mensaje);
+                System.out.println("Agregue " + mensaje + " a la cola de mensajes de " + receptor.getNombre());
             }
         } else {
-            System.out.println("Usuario " + receptor + " no encontrado.");
+            System.out.println("Usuario no encontrado.");
         }
     }
 
@@ -72,7 +77,7 @@ public class Servidor {
     }
 
     public void logearCliente(String usuario, String ip, int puerto) throws IOException, UsuarioExistenteException {
-        if (validarDireccion(ip, puerto))
+        if (validarDireccion(ip, puerto, usuario))
             if (!directorio.containsKey(usuario)) {
                 UsuarioServidor nuevoUsuario = new UsuarioServidor(usuario, ip, puerto);
                 directorio.put(usuario, nuevoUsuario);
@@ -89,7 +94,7 @@ public class Servidor {
         throw new UsuarioExistenteException(usuario);
     }
 
-    private boolean validarDireccion(String ip, int puerto) {
+    private boolean validarDireccion(String ip, int puerto, String name) {
         try {
             String ipServdidor = InetAddress.getLocalHost().getHostAddress();
             if (puerto == puertoServidor && ip.equalsIgnoreCase(ipServdidor)) {
@@ -99,7 +104,7 @@ public class Servidor {
             System.err.println("Error al obtener la dirección IP del servidor: " + e.getMessage());
         }
         for (UsuarioServidor usuario : directorio.values()) {
-            if (usuario.getIp().equals(ip) && usuario.getPuerto() == puerto) {
+            if (usuario.getIp().equals(ip) && usuario.getPuerto() == puerto && !usuario.getNombre().equals(name)) {
                 return false;
             }
         }
