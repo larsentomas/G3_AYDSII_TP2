@@ -30,12 +30,20 @@ public class VistaInicio extends JFrame implements IVistaInicio {
     private JPanel panel_chat;
     private JLabel lblCartelBienvenida;
     private JLabel lblContactoActivo;
+    private boolean darkMode = false;
+    private JButton btnModo;
 
     // Paleta Chatty
     private final Color AZUL_OSCURO = new Color(5, 10, 42);
     private final Color ROSA = new Color(255, 118, 123);
     private final Color GRIS_CLARO = new Color(240, 240, 240);
     private final Color BLANCO = Color.WHITE;
+    
+ // Paleta Dark Mode Chatty
+    private final Color NEGRO = new Color(18, 18, 18);
+    private final Color GRIS_OSCURO = new Color(48, 48, 48);
+    private final Color BLANCO_GRISACEO = new Color(220, 220, 220);
+    private final Color AZUL_CLARO = new Color(100, 149, 237);
 
     public VistaInicio() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -128,12 +136,19 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         panel_botones.add(this.btnAgregarContacto);
         panel_botones.add(this.btnLoguout);
 
-        JPanel panel_norte = new JPanel();
+        JPanel panel_norte = new JPanel(new BorderLayout());
         panel_norte.setBackground(AZUL_OSCURO);
         contentPane.add(panel_norte, BorderLayout.NORTH);
+
         this.lblCartelBienvenida = new JLabel("Bienvenido/a");
         this.lblCartelBienvenida.setForeground(BLANCO);
-        panel_norte.add(this.lblCartelBienvenida);
+        this.lblCartelBienvenida.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panel_norte.add(this.lblCartelBienvenida, BorderLayout.WEST);
+
+        // botón Modo Oscuro/Claro
+        this.btnModo = new JButton("🌙");
+        aplicarEstiloBoton(btnModo);
+        panel_norte.add(btnModo, BorderLayout.EAST);
 
         btnEnviar.setEnabled(false);
         txtf_mensaje.addKeyListener(new KeyAdapter() {
@@ -142,6 +157,39 @@ public class VistaInicio extends JFrame implements IVistaInicio {
                 btnEnviar.setEnabled(!txtf_mensaje.getText().isEmpty());
             }
         });
+        
+        btnModo.addActionListener(e -> toggleDarkMode());
+    }
+
+    private void toggleDarkMode() {
+        darkMode = !darkMode;
+
+        if (darkMode) {
+            contentPane.setBackground(AZUL_OSCURO);
+            listaConversaciones.setBackground(Color.DARK_GRAY);
+            listaConversaciones.setForeground(BLANCO);
+            lista_chat.setBackground(Color.DARK_GRAY);
+            lista_chat.setForeground(BLANCO);
+            panel_chat.setBackground(AZUL_OSCURO);
+            lblContactoActivo.setForeground(ROSA);
+            lblCartelBienvenida.setForeground(ROSA);
+            btnModo.setText("☀️"); // Cambia a modo claro
+        } else {
+            contentPane.setBackground(BLANCO);
+            listaConversaciones.setBackground(GRIS_CLARO);
+            listaConversaciones.setForeground(Color.BLACK);
+            lista_chat.setBackground(BLANCO);
+            lista_chat.setForeground(Color.BLACK);
+            panel_chat.setBackground(BLANCO);
+            lblContactoActivo.setForeground(BLANCO);
+            lblCartelBienvenida.setForeground(BLANCO);
+            btnModo.setText("🌙"); // Cambia a modo oscuro
+        }
+
+        listaConversaciones.repaint();
+        lista_chat.repaint();
+        panel_chat.repaint();
+        contentPane.repaint();
     }
 
     private void aplicarEstiloBoton(JButton boton) {
@@ -223,43 +271,114 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         }
     }
 
-    public JButton getBtnNuevoContacto() {
-        return btnAgregarContacto;
-    }
+    // Getters y Setters
+ public JButton getBtnNuevoContacto() {
+     return btnAgregarContacto;
+ }
 
-    public JButton getBtnNuevaConversacion() {
-        return btnAgregarChat;
-    }
+ public JButton getBtnNuevaConversacion() {
+     return btnAgregarChat;
+ }
 
-    public JButton getEnviarMensaje() {
-        return btnEnviar;
-    }
+ public JButton getEnviarMensaje() {
+     return btnEnviar;
+ }
 
-    public String getMensaje() {
-        return this.txtf_mensaje.getText();
-    }
+ public String getMensaje() {
+     return this.txtf_mensaje.getText();
+ }
 
-    public Conversacion getConversacionActiva() {
-        return this.conversacion;
-    }
+ public Conversacion getConversacionActiva() {
+     return this.conversacion;
+ }
 
-    public void setConversacion(Conversacion conversacion) {
-        this.conversacion = conversacion;
-    }
+ public void setConversacion(Conversacion conversacion) {
+     this.conversacion = conversacion;
+ }
 
-    public void setBienvenida(String nombre) {
-        this.lblCartelBienvenida.setText("Bienvenido/a  " + nombre);
-    }
+ 
+ public void setBienvenida(String nombre) {
+     this.lblCartelBienvenida.setText("Bienvenido/a  "+ nombre);
+     // this.lblCartelBienvenida.setFont(new Font("Arial", Font.BOLD, 20));
+     // this.lblCartelBienvenida.setForeground(Color.BLUE);
+ }
 
-    public JButton getBtnLoguout() {
-        return btnLoguout;
-    }
+ public JButton getBtnLoguout() {
+     return btnLoguout;
+ }
 
-    public void mostrarModalError(String s) {
-        JOptionPane.showMessageDialog(this, s, "Error", JOptionPane.ERROR_MESSAGE);
-    }
+ // Modales
+ public String mostrarModalNuevaConversacion(ArrayList<String> opciones) {
+     if (opciones == null || opciones.isEmpty()) {
+         JOptionPane.showMessageDialog(this, "No hay contactos disponibles para iniciar una conversación.", "Información", JOptionPane.INFORMATION_MESSAGE);
+         return null;
+     }
 
-    public void mostrarModalExito(String mensaje) {
-        JOptionPane.showMessageDialog(this, mensaje, "Éxito", JOptionPane.INFORMATION_MESSAGE);
-    }
+     String seleccion = (String) JOptionPane.showInputDialog(
+             this,
+             "Seleccione un contacto para iniciar una nueva conversación:",
+             "Nueva Conversación",
+             JOptionPane.PLAIN_MESSAGE,
+             null,
+             opciones.toArray(),
+             opciones.get(0)
+     );
+
+     if (seleccion == null) {
+         return null; // User cancelled the dialog
+     }
+
+     return seleccion; // Return the selected contact or null if no selection was made
+
+ }
+
+ public ArrayList<String> mostrarModalAgregarContacto(ArrayList<String> posiblesContactos) {
+     if (posiblesContactos == null || posiblesContactos.isEmpty()) {
+         JOptionPane.showMessageDialog(this, "No hay contactos disponibles para agregar.", "Información", JOptionPane.INFORMATION_MESSAGE);
+         return null;
+     }
+
+     String[] opciones = posiblesContactos.toArray(new String[0]);
+     JComboBox<String> comboBox = new JComboBox<>(opciones);
+     JTextField nicknameField = new JTextField();
+
+     Object[] message = {
+             "Seleccione un contacto para agregar:", comboBox,
+             "Ingrese un nickname personal:", nicknameField
+     };
+
+     int option = JOptionPane.showConfirmDialog(
+             this,
+             message,
+             "Agregar Contacto",
+             JOptionPane.OK_CANCEL_OPTION,
+             JOptionPane.PLAIN_MESSAGE
+     );
+
+     if (option == JOptionPane.OK_OPTION) {
+         String seleccion = (String) comboBox.getSelectedItem();
+         String nickname = nicknameField.getText().trim();
+
+         if (seleccion != null) {
+             ArrayList<String> respuesta = new ArrayList<>();
+             respuesta.add(seleccion);
+             if (nickname.isEmpty()) {
+                 respuesta.add(seleccion);
+             }
+             return respuesta;
+         } else {
+             JOptionPane.showMessageDialog(this, "Debe seleccionar un contacto y proporcionar un nickname.", "Error", JOptionPane.ERROR_MESSAGE);
+         }
+     }
+
+     return null;
+ }
+
+ public void mostrarModalError(String s) {
+     JOptionPane.showMessageDialog(this, s, "Error", JOptionPane.ERROR_MESSAGE);
+ }
+
+ public void mostrarModalExito(String contactoAgregadoExitosamente) {
+     JOptionPane.showMessageDialog(this, contactoAgregadoExitosamente, "Éxito", JOptionPane.INFORMATION_MESSAGE);
+ }
 } 
