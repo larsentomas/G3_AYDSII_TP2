@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import javax.swing.JButton;
 
 public class VistaInicio extends JFrame implements IVistaInicio {
 
@@ -174,6 +175,13 @@ public class VistaInicio extends JFrame implements IVistaInicio {
             lblContactoActivo.setForeground(ROSA);
             lblCartelBienvenida.setForeground(ROSA);
             btnModo.setText("☀️"); // Cambia a modo claro
+
+            // --- Colores de botones en dark mode ---
+            setColorBoton(btnEnviar, ROSA, BLANCO);
+            setColorBoton(btnAgregarChat, ROSA, BLANCO);
+            setColorBoton(btnAgregarContacto, ROSA, BLANCO);
+            setColorBoton(btnLoguout, ROSA, BLANCO);
+
         } else {
             contentPane.setBackground(BLANCO);
             listaConversaciones.setBackground(GRIS_CLARO);
@@ -184,6 +192,12 @@ public class VistaInicio extends JFrame implements IVistaInicio {
             lblContactoActivo.setForeground(BLANCO);
             lblCartelBienvenida.setForeground(BLANCO);
             btnModo.setText("🌙"); // Cambia a modo oscuro
+
+            // --- Colores de botones en modo claro ---
+            setColorBoton(btnEnviar, AZUL_OSCURO, BLANCO);
+            setColorBoton(btnAgregarChat, AZUL_OSCURO, BLANCO);
+            setColorBoton(btnAgregarContacto, AZUL_OSCURO, BLANCO);
+            setColorBoton(btnLoguout, AZUL_OSCURO, BLANCO);
         }
 
         listaConversaciones.repaint();
@@ -192,16 +206,23 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         contentPane.repaint();
     }
 
+    private void setColorBoton(JButton boton, Color fondo, Color texto) {
+        boton.setBackground(fondo);
+        boton.setForeground(texto);
+    }
+
     private void aplicarEstiloBoton(JButton boton) {
         boton.setBackground(AZUL_OSCURO);
         boton.setForeground(BLANCO);
         boton.setFocusPainted(false);
-        boton.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+        boton.setBorder(new RoundedBorder(5)); // 15 píxeles de radio redondeado
+        boton.setContentAreaFilled(true);
+        boton.setOpaque(true);
+
         boton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 boton.setBackground(ROSA);
             }
-
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 boton.setBackground(AZUL_OSCURO);
             }
@@ -218,6 +239,7 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         lblContactoActivo.setText("Chat con: " + conversacion.getIntegrante());
         lista_chat.revalidate();
         lista_chat.repaint();
+        lista_chat.makeVisible(lista_chat.getItemCount() - 1);
     }
 
     @Override
