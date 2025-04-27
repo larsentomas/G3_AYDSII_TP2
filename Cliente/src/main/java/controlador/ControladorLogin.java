@@ -38,4 +38,12 @@ public class ControladorLogin implements ActionListener {
             }
         }
     }
+
+    public void setVisible(boolean b) {
+        vistaLogin.setVisible(b);
+    }
+
+    public void mostrarModalError(String s) {
+        vistaLogin.mostrarModalError(s);
+    }
 }

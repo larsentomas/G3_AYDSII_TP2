@@ -127,11 +127,11 @@ public class Sistema {
                     System.out.println("Conversacion es " + conversacion);
                     agregarMensajeConversacion(mensaje, conversacion);
 
-                    if (conversacion == vistaInicio.getConversacionActiva()) {
-                        vistaInicio.actualizarPanelChat(conversacion);
+                    if (conversacion == controlador.getConversacionActiva()) {
+                        controlador.actualizarPanelChat(conversacion);
                     } else {
                         conversacion.setNotificado(true);
-                        vistaInicio.actualizarListaConversaciones();
+                        controlador.actualizarListaConversaciones();
                     }
 
                 }
@@ -143,22 +143,22 @@ public class Sistema {
                         usuarioLogueado = null;
                         vistaLogin.mostrarModalError("El usuario ya existe.");
                     } else {
-                        vistaLogin.setVisible(false);
-                        vistaInicio.setVisible(true);
-                        vistaInicio.setBienvenida(usuarioLogueado.getNombre());
+                        controladorLogin.setVisible(false);
+                        controlador.setVisible(true);
+                        controlador.setBienvenida(usuarioLogueado.getNombre());
                     }
                 }
                 case Respuesta.ENVIAR_MENSAJE -> {
                     if (respuesta.getError()) {
                         // Si el mensaje no se pudo enviar, se le muestra un mensaje de error
-                        vistaInicio.mostrarModalError("El mensaje no se pudo enviar.");
+                        controlador.mostrarModalError("El mensaje no se pudo enviar.");
                     } else {
                         // Si el mensaje se envio correctamente, se le muestra un mensaje de exito
                         Mensaje mensaje = (Mensaje) respuesta.getDatos().get("mensaje");
                         String receptor = (String) respuesta.getDatos().get("receptor");
                         Conversacion c = usuarioLogueado.getConversacionCon(receptor);
                         usuarioLogueado.agregarMensajeaConversacion(mensaje, c);
-                        vistaInicio.actualizarPanelChat(c);
+                        controlador.actualizarPanelChat(c);
                     }
                 }
                 case Respuesta.NUEVA_CONVERSACION -> {
@@ -171,7 +171,7 @@ public class Sistema {
                         }
                     }
                     usuarioLogueado.crearConversacion(usuarioConversacion);
-                    vistaInicio.actualizarListaConversaciones();
+                    controlador.actualizarListaConversaciones();
                 }
                 case Respuesta.MENSAJES_OFFLINE -> recibirMensajesOffline(respuesta);
             }
@@ -194,7 +194,7 @@ public class Sistema {
                 throw new RuntimeException(e);
             }
         }
-        vistaInicio.actualizarListaConversaciones();
+        controlador.actualizarListaConversaciones();
 
     }
 
@@ -212,18 +212,18 @@ public class Sistema {
 
         if (!noAgendados.isEmpty()) {
             // Mostrar el modal para agregar contacto con las opciones de listaUsuarios
-            ArrayList<String> nuevoContacto = vistaInicio.mostrarModalAgregarContacto(noAgendados);
+            ArrayList<String> nuevoContacto = controlador.mostrarModalAgregarContacto(noAgendados);
             System.out.println(nuevoContacto);
             if (nuevoContacto != null) {
                 try {
                     getUsuarioLogueado().agregarContacto(nuevoContacto.getFirst(), nuevoContacto.get(1));
-                    vistaInicio.mostrarModalExito("Contacto agregado exitosamente.");
+                    controlador.mostrarModalExito("Contacto agregado exitosamente.");
                 } catch (ContactoRepetidoException e) {
-                    vistaInicio.mostrarModalError("El contacto ya existe.");
+                    controlador.mostrarModalError("El contacto ya existe.");
                 }
             }
         } else {
-            vistaInicio.mostrarModalError("Ya se tienen todos los usuario agendados.");
+            controlador.mostrarModalError("Ya se tienen todos los usuario agendados.");
         }
     }
 
@@ -231,8 +231,8 @@ public class Sistema {
     public void agregarMensajeConversacion(Mensaje mensaje, Conversacion conversacion) {
         usuarioLogueado.agregarMensajeaConversacion(mensaje, conversacion);
 
-        if (vistaInicio.getConversacionActiva() == conversacion) {
-            vistaInicio.actualizarPanelChat(conversacion);
+        if (controlador.getConversacionActiva() == conversacion) {
+            controlador.actualizarPanelChat(conversacion);
         }
     }
 
@@ -289,7 +289,7 @@ public class Sistema {
 
         } catch (IOException e) {
             usuarioLogueado = null;
-            vistaLogin.mostrarModalError("Error al obtener la dirección IP local.");
+            controladorLogin.mostrarModalError("Error al obtener la dirección IP local.");
         }
     }
 
@@ -297,11 +297,10 @@ public class Sistema {
         try {
             new Thread(new Comunicador(new Solicitud(Solicitud.LOGOUT, Sistema.getInstance().getUsuarioLogueado().getNombre()), puertoServidor, ipServidor)).start();
             usuarioLogueado = null;
-            vistaInicio.setVisible(false);
-            vistaLogin.setVisible(true);
-            //System.exit(0);
+            controlador.setVisible(false);
+            controladorLogin.setVisible(true);
         } catch (IOException e) {
-            vistaLogin.mostrarModalError("Error al cerrar la sesión.");
+            controladorLogin.mostrarModalError("Error al cerrar la sesión.");
         }
     }
 
