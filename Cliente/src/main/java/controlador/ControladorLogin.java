@@ -14,6 +14,7 @@ public class ControladorLogin implements ActionListener {
 
     public ControladorLogin(VistaLogin vistaLogin) {
         this.vistaLogin = vistaLogin;
+        this.vistaLogin.setBtnInicio(false);
         initController();
     }
 
