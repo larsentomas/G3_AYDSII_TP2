@@ -233,14 +233,17 @@ public class VistaInicio extends JFrame implements IVistaInicio {
 
     public void actualizarPanelChat(Conversacion conversacion) {
         this.panel_chat.setVisible(true);
-        lblContactoActivo.setText("Chat con: " + conversacion.getIntegrante());
+        lblContactoActivo.setText("Chat con: " + Sistema.getInstance().getUsuarioLogueado().getApodo(conversacion.getIntegrante()));
         this.conversacion = conversacion;
         lista_chat.removeAll();
         for (Mensaje mensaje : conversacion.getMensajes()) {
             Date fecha = new Date(mensaje.getTimestampCreado().getTime());
             SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yy h:m");
             String formateada = formatter.format(fecha);
-            lista_chat.add("[" + formateada + "] " + mensaje.getEmisor() + ":\n" + mensaje);
+            if (mensaje.getEmisor().equalsIgnoreCase(Sistema.getInstance().getUsuarioLogueado().getNombre())) {
+                lista_chat.add("[" + formateada + "] " + Sistema.getInstance().getUsuarioLogueado().getNombre() + ":\n" + mensaje);
+            } else
+            lista_chat.add("[" + formateada + "] " + Sistema.getInstance().getUsuarioLogueado().getApodo(mensaje.getEmisor()) + ":\n" + mensaje);
         }
         lblContactoActivo.revalidate();
         lblContactoActivo.repaint();
@@ -290,16 +293,17 @@ public class VistaInicio extends JFrame implements IVistaInicio {
             panel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
             panel.setBackground(isSelected ? AZUL_OSCURO : BLANCO);
 
-            JLabel nombre = new JLabel(conversacion.getIntegrante());
+            JLabel nombre = new JLabel(Sistema.getInstance().getUsuarioLogueado().getApodo(conversacion.getIntegrante()));
             nombre.setForeground(isSelected ? BLANCO : Color.BLACK);
             nombre.setFont(new Font("Arial", Font.BOLD, 14));
-
-            JLabel ultimoMensaje = new JLabel("" + conversacion.getMensajes().getLast()); //chequear
-            ultimoMensaje.setForeground(isSelected ? BLANCO : Color.GRAY);
-            ultimoMensaje.setFont(new Font("Arial", Font.PLAIN, 12));
-
             panel.add(nombre, BorderLayout.NORTH);
-            panel.add(ultimoMensaje, BorderLayout.SOUTH);
+
+            if (!conversacion.getMensajes().isEmpty()) {
+                JLabel ultimoMensaje = new JLabel("" + conversacion.getMensajes().getLast()); //chequear
+                ultimoMensaje.setForeground(isSelected ? BLANCO : Color.GRAY);
+                ultimoMensaje.setFont(new Font("Arial", Font.PLAIN, 12));
+                panel.add(ultimoMensaje, BorderLayout.SOUTH);
+            }
 
             if (conversacion.isNotificado() && conversacion != getConversacionActiva()) {
                 panel.setBorder(BorderFactory.createLineBorder(ROSA, 2));
