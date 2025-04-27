@@ -1,11 +1,12 @@
-package modelo;
+package common;
 
-import sistema.Sistema;
 
 import java.util.*;
 import java.io.Serializable;
 
 public class Solicitud implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public final static String NUEVA_CONVERSACION = "NUEVA_CONVERSACION";
     public final static String LOGIN = "LOGIN";
     public final static String DIRECTORIO = "DIRECTORIO";
@@ -17,9 +18,9 @@ public class Solicitud implements Serializable {
     private final Map<String, Object> datos;
 
 
-    public Solicitud(String tipo) {
+    public Solicitud(String tipo, String usuario) {
         this.tipo = tipo;
-        this.datos = Map.of("usuario", Sistema.getInstance().getUsuarioLogueado().getNombre());
+        this.datos = Map.of("usuario", usuario);
     }
 
     public Solicitud(String tipo, Map<String, Object> datos) {

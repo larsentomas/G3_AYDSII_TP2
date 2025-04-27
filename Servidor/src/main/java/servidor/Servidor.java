@@ -1,10 +1,9 @@
 package servidor;
 
 import excepciones.UsuarioExistenteException;
-import modelo.Conversacion;
-import modelo.Mensaje;
-import modelo.Respuesta;
 
+
+import common.*;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;

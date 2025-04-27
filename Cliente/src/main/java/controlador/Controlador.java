@@ -1,8 +1,7 @@
 package controlador;
 
-import modelo.Conversacion;
-import modelo.Usuario;
 import sistema.Sistema;
+import common.Conversacion;
 import vista.VistaInicio;
 
 import java.awt.event.ActionEvent;

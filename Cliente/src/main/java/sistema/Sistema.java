@@ -1,5 +1,6 @@
 package sistema;
 
+import common.*;
 import controlador.Controlador;
 import controlador.ControladorLogin;
 import excepciones.ContactoRepetidoException;
@@ -237,7 +238,7 @@ public class Sistema {
     public void getPosiblesContactos() throws IOException {
         if (usuarioLogueado != null) {
             // Enviar solicitud al servidor para obtener la lista de posibles contactos
-            new Thread(new Comunicador(new Solicitud(Solicitud.DIRECTORIO), puertoServidor, ipServidor)).start();
+            new Thread(new Comunicador(new Solicitud(Solicitud.DIRECTORIO, Sistema.getInstance().getUsuarioLogueado().getNombre()), puertoServidor, ipServidor)).start();
         }
     }
 
@@ -293,7 +294,7 @@ public class Sistema {
 
     public static void cerrarSesion() {
         try {
-            new Thread(new Comunicador(new Solicitud(Solicitud.LOGOUT), puertoServidor, ipServidor)).start();
+            new Thread(new Comunicador(new Solicitud(Solicitud.LOGOUT, Sistema.getInstance().getUsuarioLogueado().getNombre()), puertoServidor, ipServidor)).start();
             usuarioLogueado = null;
             vistaInicio.setVisible(false);
             System.exit(0);

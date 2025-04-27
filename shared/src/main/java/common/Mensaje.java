@@ -1,9 +1,11 @@
-package modelo;
+package common;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
 
 public class Mensaje implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String contenido;
     private String emisor;
     private Timestamp timestampCreado;

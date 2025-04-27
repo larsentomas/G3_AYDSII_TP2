@@ -1,8 +1,7 @@
 package vista;
 
-import modelo.Conversacion;
-import modelo.Mensaje;
-import modelo.Usuario;
+import common.Mensaje;
+import common.Conversacion;
 import sistema.Sistema;
 
 import javax.swing.*;

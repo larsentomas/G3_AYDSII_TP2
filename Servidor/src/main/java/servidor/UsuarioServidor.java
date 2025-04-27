@@ -1,9 +1,6 @@
 package servidor;
 
-import modelo.Usuario;
-
-import java.io.IOException;
-import java.net.Socket;
+import common.Usuario;
 
 public class UsuarioServidor extends Usuario {
     private boolean conectado;

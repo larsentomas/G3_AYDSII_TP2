@@ -1,9 +1,10 @@
-package modelo;
+package common;
 
 import java.util.Map;
 import java.io.Serializable;
 
 public class Respuesta implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     public final static String NUEVA_CONVERSACION = "NUEVA_CONVERSACION";
     public final static String LOGIN = "LOGIN";

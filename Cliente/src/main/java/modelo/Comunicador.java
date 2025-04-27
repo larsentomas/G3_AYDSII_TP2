@@ -2,6 +2,7 @@ package modelo;
 
 import sistema.Sistema;
 
+import common.Solicitud;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
