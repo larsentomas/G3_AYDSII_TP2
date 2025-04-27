@@ -242,6 +242,13 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         lista_chat.makeVisible(lista_chat.getItemCount() - 1);
     }
 
+    public void actualizarListaConversaciones() {
+        listModelConversaciones.clear();
+        for (Conversacion conversacion : Sistema.getInstance().getUsuarioLogueado().getConversaciones()) {
+            listModelConversaciones.addElement(conversacion);
+        }
+    }
+
     @Override
     public void setActionListener(ActionListener actionListener) {
         this.btnAgregarChat.addActionListener(actionListener);
@@ -386,6 +393,8 @@ public class VistaInicio extends JFrame implements IVistaInicio {
              respuesta.add(seleccion);
              if (nickname.isEmpty()) {
                  respuesta.add(seleccion);
+             }else{
+                 respuesta.add(nickname);
              }
              return respuesta;
          } else {

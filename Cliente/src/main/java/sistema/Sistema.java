@@ -200,7 +200,7 @@ public class Sistema {
 
     public void recibirListaUsuarios(Respuesta respuesta) {
         ArrayList<String> listaUsuarios = (ArrayList<String>) respuesta.getDatos().get("usuarios");
-        listaUsuarios.remove(usuarioLogueado.getNombre()); // Me saco a mi mismo
+        listaUsuarios.remove(usuarioLogueado.getNombre());
 
         ArrayList<String> noAgendados = new ArrayList<>();
         for (String contacto : listaUsuarios) {
@@ -213,6 +213,7 @@ public class Sistema {
         if (!noAgendados.isEmpty()) {
             // Mostrar el modal para agregar contacto con las opciones de listaUsuarios
             ArrayList<String> nuevoContacto = vistaInicio.mostrarModalAgregarContacto(noAgendados);
+            System.out.println(nuevoContacto);
             if (nuevoContacto != null) {
                 try {
                     getUsuarioLogueado().agregarContacto(nuevoContacto.getFirst(), nuevoContacto.get(1));
