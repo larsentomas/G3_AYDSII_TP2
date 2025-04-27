@@ -10,7 +10,9 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import javax.swing.JButton;
 
 public class VistaInicio extends JFrame implements IVistaInicio {
@@ -234,7 +236,10 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         this.conversacion = conversacion;
         lista_chat.removeAll();
         for (Mensaje mensaje : conversacion.getMensajes()) {
-            lista_chat.add("[" + mensaje.getTimestampCreado().getTime() + "] " + mensaje.getEmisor() + ":\n" + mensaje);
+            Date fecha = new Date(mensaje.getTimestampCreado().getTime());
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yy h:m");
+            String formateada = formatter.format(fecha);
+            lista_chat.add("[" + formateada + "] " + mensaje.getEmisor() + ":\n" + mensaje);
         }
         lblContactoActivo.setText("Chat con: " + conversacion.getIntegrante());
         lista_chat.revalidate();
