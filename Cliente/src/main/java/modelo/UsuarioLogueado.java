@@ -1,35 +1,44 @@
 package modelo;
 
-import excepciones.ContactoRepetidoException;
-import excepciones.UsuarioExistenteException;
 
-import java.net.Socket;
+import excepciones.ContactoRepetidoException;
+
+import common.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class UsuarioLogueado extends Usuario {
 
-    private Socket socket;
-    private HashMap<String, String> contactos;
-    private ArrayList<Conversacion> conversaciones; // nombre : nickname nuestro
+    private HashMap<String, String> contactos; // usuario, apodo
+    private CopyOnWriteArrayList<Conversacion> conversaciones; // nombre : nickname nuestro
 
-    public UsuarioLogueado(Usuario u, Socket s) {
-        super(u.getNombre(), u.getIp(), u.getPuerto());
-        this.socket = s;
-    }
-
-    public UsuarioLogueado(String nickname, String ip, int puerto, Socket s) {
+    public UsuarioLogueado(String nickname, String ip, int puerto) {
         super(nickname, ip, puerto);
         this.contactos = new HashMap<>();
-        this.conversaciones = new ArrayList<>();
-        this.socket = s;
+        this.conversaciones = new CopyOnWriteArrayList<>();
     }
 
-    public Conversacion crearConversacion(Usuario usuario) {
-        Conversacion conversacion = new Conversacion(usuario.getNombre());
+    public UsuarioLogueado(Usuario u) {
+        super(u.getNombre(), u.getIp(), u.getPuerto());
+        this.contactos = new HashMap<>();
+        this.conversaciones = new CopyOnWriteArrayList<>();
+    }
+
+    public Conversacion crearConversacion(String usuario) {
+        Conversacion conversacion = new Conversacion(usuario);
         this.agregarConversacion(conversacion);
         conversacion.setNotificado(true);
         return conversacion;
+    }
+
+    public String getContacto(String username) {
+        for (String u : contactos.keySet()) {
+            if (contactos.get(u).equals(username)) {
+                return u;
+            }
+        }
+        return null;
     }
 
     public ArrayList<String> getContactosSinConversacion() {
@@ -37,22 +46,25 @@ public class UsuarioLogueado extends Usuario {
         for (String contacto : contactos.keySet()) {
             boolean tieneConversacion = false;
             for (Conversacion conversacion : conversaciones) {
-                if (conversacion.getIntegrante().equals(contactos.get(contacto))) {
+                if (conversacion.getIntegrante().equals(contacto)) {
                     tieneConversacion = true;
                     break;
                 }
             }
             if (!tieneConversacion) {
-                contactosSinConversacion.add(contacto);
+                contactosSinConversacion.add(getContactos().get(contacto));
             }
+            System.out.print("Los contactos sin conversacion son " + contactosSinConversacion);
         }
         return contactosSinConversacion;
     }
 
     public Conversacion getConversacionCon(String contacto) {
-        for (Conversacion conversacion : conversaciones) {
-            if (conversacion.getIntegrante().equals(contacto)) {
-                return conversacion;
+        if (conversaciones != null) {
+            for (Conversacion conversacion : conversaciones) {
+                if (conversacion.getIntegrante().equals(contacto)) {
+                    return conversacion;
+                }
             }
         }
         return null;
@@ -71,21 +83,23 @@ public class UsuarioLogueado extends Usuario {
     }
 
     public void agregarMensajeaConversacion(Mensaje mensaje, Conversacion conversacion) {
-        if (conversacion != null) {
-            conversacion.agregarMensaje(mensaje);
-        }
+        conversacion.agregarMensaje(mensaje);
     }
 
     public HashMap<String, String> getContactos() {
         return contactos;
     }
 
+    public String getApodo(String username) {
+        return contactos.get(username);
+    }
+
     public void agregarConversacion(Conversacion conversacion) {
         this.conversaciones.add(conversacion);
     }
 
-    public Socket getSocket() {
-        return socket;
+    public CopyOnWriteArrayList<Conversacion> getConversaciones() {
+        return conversaciones;
     }
 
 }

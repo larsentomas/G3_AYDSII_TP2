@@ -60,7 +60,7 @@ public class VistaLogin extends JFrame implements ILogin {
         JPanel panel_oeste = new JPanel();
         panel_oeste.setPreferredSize(new Dimension(100, 90));
         panel_oeste.setBackground(Color.WHITE);
-        ImageIcon imagenOriginal = new ImageIcon("C:/Users/franc/Documents/GitHub/G3_AYDSII_TP2/Cliente/src/main/java/vista/Logo_login_sf.png");
+        ImageIcon imagenOriginal = new ImageIcon("src/main/resources/vista/Logo_login_sf.png");
         Image imagenEscalada = imagenOriginal.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
         JLabel etiquetaImagen = new JLabel(new ImageIcon(imagenEscalada));
         panel_oeste.add(etiquetaImagen);

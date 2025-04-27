@@ -1,5 +1,6 @@
 package sistema;
 
+import common.*;
 import controlador.Controlador;
 import controlador.ControladorLogin;
 import excepciones.ContactoRepetidoException;
@@ -14,11 +15,12 @@ import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 
 public class Sistema {
 
     // Info del servidor
-    private static int portServidor;
+    private static int puertoServidor;
     private static String ipServidor;
 
     private static Sistema instance = null;
@@ -66,7 +68,7 @@ public class Sistema {
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
-        portServidor = 8080;
+        puertoServidor = 6000;
     }
 
     public UsuarioLogueado getUsuarioLogueado() {
@@ -81,89 +83,152 @@ public class Sistema {
         return vistaLogin;
     }
 
-    public Conversacion crearConversacion(String usuario) {
+    public Conversacion crearConversacion(String apodo) {
         // Crear una nueva conversacion
-        Conversacion conversacion = new Conversacion(usuario);
-        usuarioLogueado.agregarConversacion(conversacion);
-        return conversacion;
+        String usuario = usuarioLogueado.getContacto(apodo);
+        Conversacion c = usuarioLogueado.crearConversacion(usuario);
+        Solicitud sol = new Solicitud(Solicitud.NUEVA_CONVERSACION, Map.of("usuario", usuarioLogueado.getNombre(), "usuarioConversacion", usuario));
+        try {
+            new Thread(new Comunicador(sol, puertoServidor, ipServidor)).start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return c;
     }
 
     // comunicacion con servidor
 
-    public void enviarMensaje(String contenido, Conversacion conversacion) {
-        Solicitud solicitud = new Solicitud(new Mensaje(contenido, usuarioLogueado.getNombre()), conversacion);
-        new Thread(new Comunicador(solicitud, usuarioLogueado.getSocket())).start();
+    public void enviarMensaje(String contenido, Conversacion conversacion) throws IOException {
+        Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", new Mensaje(contenido, usuarioLogueado.getNombre()), "receptor", conversacion.getIntegrante()));
+        new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
     }
 
     public void recibirObj(Object obj) {
-        System.out.println("Recibiendo objeto: " + obj.getClass().getName());
-        if (obj instanceof Mensaje mensaje) {
-            recibirMensaje(mensaje);
-        } else if (obj instanceof Respuesta respuesta) {
-            if (respuesta.getTipo().equalsIgnoreCase("LOGIN")) {
-                System.out.println("Respuesta de login");
-                if (respuesta.getError()) {
-                    // Si el usuario no es valido, se le muestra un mensaje de error
-                    vistaLogin.mostrarModalError("El usuario ya existe.");
-                } else {
-                    try {
-                        usuarioLogueado = new UsuarioLogueado(usuarioLogueado, new Socket(ipServidor, portServidor));
+        if (obj instanceof Respuesta respuesta) {
+            switch(respuesta.getTipo()) {
+                case Respuesta.MENSAJE_RECIBIDO -> {
+                    Mensaje mensaje = (Mensaje) respuesta.getDatos().get("mensaje");
+                    String emisor = mensaje.getEmisor();
+
+                    System.out.println("Recibo " + mensaje + " de " + emisor);
+
+                    Conversacion conversacion;
+                    if (!usuarioLogueado.getContactos().containsKey(emisor)) {
+                        try {
+                            usuarioLogueado.agregarContacto(emisor, emisor);
+                            conversacion = usuarioLogueado.crearConversacion(emisor);
+                            System.out.println("No existia conversacion con " + emisor + ", la creo");
+                        } catch (ContactoRepetidoException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        conversacion = usuarioLogueado.getConversacionCon(emisor);
+                    }
+                    System.out.println("Conversacion es " + conversacion);
+                    agregarMensajeConversacion(mensaje, conversacion);
+
+                    if (conversacion == vistaInicio.getConversacionActiva()) {
+                        vistaInicio.actualizarPanelChat(conversacion);
+                    } else {
+                        conversacion.setNotificado(true);
+                        vistaInicio.actualizarListaConversaciones();
+                    }
+
+                }
+                case Respuesta.DIRECTORIO -> recibirListaUsuarios(respuesta);
+                case Respuesta.LOGIN -> {
+                    System.out.println("Respuesta de login");
+                    if (respuesta.getError()) {
+                        // Si el usuario no es valido, se le muestra un mensaje de error
+                        usuarioLogueado = null;
+                        vistaLogin.mostrarModalError("El usuario ya existe.");
+                    } else {
                         vistaLogin.setVisible(false);
                         vistaInicio.setVisible(true);
                         vistaInicio.setBienvenida(usuarioLogueado.getNombre());
-                    } catch (IOException e) {
-                        vistaLogin.mostrarModalError("Error al conectar al servidor.");
                     }
                 }
-            } else if (respuesta.getTipo().equalsIgnoreCase("DIRECTORIO")) {
-                ArrayList<String> posiblesContactos = (ArrayList<String>) respuesta.getDatos().get("posiblesContactos");
-
-                if (!getNoAgendados(posiblesContactos).isEmpty()) {
-                    // Mostrar el modal para agregar contacto con las opciones de posiblesContactos
-                    ArrayList<String> nuevoContacto = vistaInicio.mostrarModalAgregarContacto(posiblesContactos);
-                    try {
-                        getUsuarioLogueado().agregarContacto(nuevoContacto.get(0), nuevoContacto.get(1));
-                        vistaInicio.mostrarModalExito("Contacto agregado exitosamente.");
-                    } catch(ContactoRepetidoException e) {
-                        vistaInicio.mostrarModalError("El contacto ya existe.");
+                case Respuesta.ENVIAR_MENSAJE -> {
+                    if (respuesta.getError()) {
+                        // Si el mensaje no se pudo enviar, se le muestra un mensaje de error
+                        vistaInicio.mostrarModalError("El mensaje no se pudo enviar.");
+                    } else {
+                        // Si el mensaje se envio correctamente, se le muestra un mensaje de exito
+                        Mensaje mensaje = (Mensaje) respuesta.getDatos().get("mensaje");
+                        String receptor = (String) respuesta.getDatos().get("receptor");
+                        Conversacion c = usuarioLogueado.getConversacionCon(receptor);
+                        usuarioLogueado.agregarMensajeaConversacion(mensaje, c);
+                        vistaInicio.actualizarPanelChat(c);
                     }
-                } else {
-                    vistaInicio.mostrarModalError("Ya se tienen todos los usuario agendados.");
                 }
+                case Respuesta.NUEVA_CONVERSACION -> {
+                    String usuarioConversacion = (String) respuesta.getDatos().get("usuarioConversacion");
+                    if (!usuarioLogueado.getContactos().containsKey(usuarioConversacion)) {
+                        try {
+                            usuarioLogueado.agregarContacto(usuarioConversacion, usuarioConversacion);
+                        } catch (ContactoRepetidoException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    usuarioLogueado.crearConversacion(usuarioConversacion);
+                    vistaInicio.actualizarListaConversaciones();
+                }
+                case Respuesta.MENSAJES_OFFLINE -> recibirMensajesOffline(respuesta);
             }
         }
     }
 
-    public ArrayList<String> getNoAgendados(ArrayList<String> posiblesContactos) {
-        ArrayList<String> noAgendados = new ArrayList<>();
-        for (String contacto : posiblesContactos) {
-            if (!usuarioLogueado.getContactos().containsKey(contacto)) {
-                noAgendados.add(contacto);
-            }
-        }
-        return noAgendados;
-    }
+    public void recibirMensajesOffline(Respuesta respuesta) {
+        Set<Map.Entry<String, Object>> keys = respuesta.getDatos().entrySet();
 
-    public void recibirMensaje(Mensaje mensaje) {
-        System.out.println("Recibiendo mensaje: " + mensaje.getContenido());
-        String emisor = mensaje.getEmisor();
-
-        if (!usuarioLogueado.getContactos().containsKey(emisor)) { // si no conozco al emisor
+        for (Map.Entry<String, Object> entry : keys) {
+            String usuario = entry.getKey();
+            ArrayList<Mensaje> mensajes = (ArrayList<Mensaje>) entry.getValue();
             try {
-                usuarioLogueado.agregarContacto(mensaje.getEmisor(), mensaje.getEmisor());
+                usuarioLogueado.agregarContacto(usuario, usuario);
+                Conversacion conversacion = usuarioLogueado.crearConversacion(usuario);
+                for (Mensaje mensaje : mensajes) {
+                    usuarioLogueado.agregarMensajeaConversacion(mensaje, conversacion);
+                }
             } catch (ContactoRepetidoException e) {
                 throw new RuntimeException(e);
             }
         }
-        agregarMensajeConversacion(mensaje, usuarioLogueado.getConversacionCon(emisor));
+        vistaInicio.actualizarListaConversaciones();
+
     }
 
-    public void agregarMensajeConversacion(Mensaje mensaje, Conversacion conversacion) {
-        if (conversacion == null) {
-            String emisor = mensaje.getEmisor();
-            conversacion = new Conversacion(emisor);
+    public void recibirListaUsuarios(Respuesta respuesta) {
+        ArrayList<String> listaUsuarios = (ArrayList<String>) respuesta.getDatos().get("usuarios");
+        listaUsuarios.remove(usuarioLogueado.getNombre());
+
+        ArrayList<String> noAgendados = new ArrayList<>();
+        for (String contacto : listaUsuarios) {
+            if (!usuarioLogueado.getContactos().containsKey(contacto)) {
+                noAgendados.add(contacto);
+            }
         }
-        usuarioLogueado.agregarConversacion(conversacion);
+
+
+        if (!noAgendados.isEmpty()) {
+            // Mostrar el modal para agregar contacto con las opciones de listaUsuarios
+            ArrayList<String> nuevoContacto = vistaInicio.mostrarModalAgregarContacto(noAgendados);
+            System.out.println(nuevoContacto);
+            if (nuevoContacto != null) {
+                try {
+                    getUsuarioLogueado().agregarContacto(nuevoContacto.getFirst(), nuevoContacto.get(1));
+                    vistaInicio.mostrarModalExito("Contacto agregado exitosamente.");
+                } catch (ContactoRepetidoException e) {
+                    vistaInicio.mostrarModalError("El contacto ya existe.");
+                }
+            }
+        } else {
+            vistaInicio.mostrarModalError("Ya se tienen todos los usuario agendados.");
+        }
+    }
+
+
+    public void agregarMensajeConversacion(Mensaje mensaje, Conversacion conversacion) {
         usuarioLogueado.agregarMensajeaConversacion(mensaje, conversacion);
 
         if (vistaInicio.getConversacionActiva() == conversacion) {
@@ -171,10 +236,10 @@ public class Sistema {
         }
     }
 
-    public void getPosiblesContactos() {
+    public void getPosiblesContactos() throws IOException {
         if (usuarioLogueado != null) {
             // Enviar solicitud al servidor para obtener la lista de posibles contactos
-            new Thread(new Comunicador(new Solicitud(Solicitud.DIRECTORIO), usuarioLogueado.getSocket())).start();
+            new Thread(new Comunicador(new Solicitud(Solicitud.DIRECTORIO, Sistema.getInstance().getUsuarioLogueado().getNombre()), puertoServidor, ipServidor)).start();
         }
     }
 
@@ -208,13 +273,14 @@ public class Sistema {
             verificarPuerto(InetAddress.getLocalHost().getHostAddress(), Integer.parseInt(puerto));
 
             // Se asume que es correcto
-            usuarioLogueado = new UsuarioLogueado(nickname, InetAddress.getLocalHost().getHostAddress(), Integer.parseInt(puerto), new Socket(ipServidor, portServidor));
+            usuarioLogueado = new UsuarioLogueado(nickname, InetAddress.getLocalHost().getHostAddress(), Integer.parseInt(puerto));
 
             // Iniciar el servidor para recibir mensajes
             new Thread(new HandlerMensajes(usuarioLogueado)).start();
 
             // Iniciar el hilo para enviar mensajes
-            new Thread(new Comunicador(new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre())), usuarioLogueado.getSocket())).start();
+            Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
+            new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
 
             // El handler de mensajes esta a la espera de mensajes
             // El comunicador va avisarle al servidor que quiere hacer login con un nickname
@@ -222,16 +288,17 @@ public class Sistema {
             // caso 2: El servidor le dice que el nickname no existe, le envia un mensaje de exito al handler
 
         } catch (IOException e) {
+            usuarioLogueado = null;
             vistaLogin.mostrarModalError("Error al obtener la dirección IP local.");
         }
     }
 
     public static void cerrarSesion() {
         try {
-            new Thread(new Comunicador(new Solicitud(Solicitud.LOGOUT), usuarioLogueado.getSocket())).start();
-
-            usuarioLogueado.getSocket().close();
+            new Thread(new Comunicador(new Solicitud(Solicitud.LOGOUT, Sistema.getInstance().getUsuarioLogueado().getNombre()), puertoServidor, ipServidor)).start();
             usuarioLogueado = null;
+            vistaInicio.setVisible(false);
+            System.exit(0);
         } catch (IOException e) {
             vistaLogin.mostrarModalError("Error al cerrar la sesión.");
         }

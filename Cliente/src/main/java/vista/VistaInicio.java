@@ -1,7 +1,7 @@
 package vista;
 
-import modelo.Conversacion;
-import modelo.Mensaje;
+import common.Mensaje;
+import common.Conversacion;
 import sistema.Sistema;
 
 import javax.swing.*;
@@ -27,7 +27,7 @@ public class VistaInicio extends JFrame implements IVistaInicio {
     private List lista_chat;
     private JList<Conversacion> listaConversaciones;
     private DefaultListModel<Conversacion> listModelConversaciones;
-    private Conversacion conversacion;
+    private Conversacion conversacion = null;
     private JPanel panel_chat;
     private JLabel lblCartelBienvenida;
     private JLabel lblContactoActivo;
@@ -242,6 +242,13 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         lista_chat.makeVisible(lista_chat.getItemCount() - 1);
     }
 
+    public void actualizarListaConversaciones() {
+        listModelConversaciones.clear();
+        for (Conversacion conversacion : Sistema.getInstance().getUsuarioLogueado().getConversaciones()) {
+            listModelConversaciones.addElement(conversacion);
+        }
+    }
+
     @Override
     public void setActionListener(ActionListener actionListener) {
         this.btnAgregarChat.addActionListener(actionListener);
@@ -386,6 +393,8 @@ public class VistaInicio extends JFrame implements IVistaInicio {
              respuesta.add(seleccion);
              if (nickname.isEmpty()) {
                  respuesta.add(seleccion);
+             }else{
+                 respuesta.add(nickname);
              }
              return respuesta;
          } else {

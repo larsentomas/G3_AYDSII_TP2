@@ -1,12 +1,12 @@
 package controlador;
 
-import modelo.Conversacion;
-import modelo.Usuario;
 import sistema.Sistema;
+import common.Conversacion;
 import vista.VistaInicio;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class Controlador implements ActionListener {
@@ -48,18 +48,28 @@ public class Controlador implements ActionListener {
             // Si el usuario no es null --> crear conversacion
             if (usuario_conversacion != null) {
                 Conversacion c = sistema.crearConversacion(usuario_conversacion);
-                vistaInicio.setConversacion(c);
+                vistaInicio.actualizarPanelChat(c);
+                vistaInicio.actualizarListaConversaciones();
             }
         } else if (e.getActionCommand().equalsIgnoreCase("AGREGAR_CONTACTO")) {
-            sistema.getPosiblesContactos();
+            try {
+                sistema.getPosiblesContactos();
+            } catch (IOException ex) {
+                vistaInicio.mostrarModalError("Error al obtener los contactos.");
+            }
         } else if (e.getActionCommand().equalsIgnoreCase("ENVIAR_MENSAJE")) {
             String mensaje = vistaInicio.getMensaje();
+            vistaInicio.limpiarcampos();
             // Validar que el mensaje no esté vacío
             if (mensaje.isEmpty()) {
                 vistaInicio.mostrarModalError("El mensaje no puede estar vacío.");
                 return;
             }
-            sistema.enviarMensaje(mensaje, vistaInicio.getConversacionActiva());
+            try {
+                sistema.enviarMensaje(mensaje, vistaInicio.getConversacionActiva());
+            } catch (IOException ex) {
+                vistaInicio.mostrarModalError("Error al enviar el mensaje.");
+            }
         } else if (e.getActionCommand().equalsIgnoreCase("LOGOUT")) {
             // Cerrar la sesión del usuario
             Sistema.cerrarSesion();

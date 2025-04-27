@@ -1,8 +1,11 @@
-package modelo;
+package common;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 
-public class Mensaje {
+public class Mensaje implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String contenido;
     private String emisor;
     private Timestamp timestampCreado;
@@ -25,9 +28,21 @@ public class Mensaje {
         return timestampCreado;
     }
 
+    public void setContenido(String contenido) {
+        this.contenido = contenido;
+    }
+
+    public void setEmisor(String emisor) {
+        this.emisor = emisor;
+    }
+
+    public void setTimestampCreado(Timestamp timestampCreado) {
+        this.timestampCreado = timestampCreado;
+    }
+
     @Override
     public String toString() {
-        return "[" + this.timestampCreado.getTime() + "] " + this.emisor + ":" + this.contenido;
+        return this.contenido;
     }
 
 }
