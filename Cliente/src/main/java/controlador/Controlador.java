@@ -50,6 +50,7 @@ public class Controlador implements ActionListener {
                 Conversacion c = sistema.crearConversacion(usuario_conversacion);
                 vistaInicio.actualizarPanelChat(c);
                 vistaInicio.actualizarListaConversaciones();
+                //vistaInicio.seleccionarConversacionActiva();
             }
         } else if (e.getActionCommand().equalsIgnoreCase("AGREGAR_CONTACTO")) {
             try {
@@ -75,6 +76,7 @@ public class Controlador implements ActionListener {
             Sistema.cerrarSesion();
             vistaInicio.dispose();
             vistaInicio.setVisible(false);
+
         }
     }
 

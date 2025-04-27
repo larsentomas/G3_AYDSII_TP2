@@ -37,7 +37,7 @@ public class VistaLogin extends JFrame implements ILogin {
         setResizable(false);
         setTitle("Chatty");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(232, 178);
+        setSize(282, 220);
         setLocationRelativeTo(null);
 
         // Content Pane principal
@@ -68,7 +68,7 @@ public class VistaLogin extends JFrame implements ILogin {
 
         // Panel derecho con campos y botón
         JPanel panel_este = new JPanel(new GridLayout(3, 1, 0, 0));
-        panel_este.setPreferredSize(new Dimension(80, 90));
+        panel_este.setPreferredSize(new Dimension(100, 90));
         panel_este.setBackground(Color.WHITE);
         contentPane.add(panel_este, BorderLayout.CENTER);
 
@@ -76,7 +76,7 @@ public class VistaLogin extends JFrame implements ILogin {
         JPanel panel_usuario = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
         panel_usuario.setBackground(Color.WHITE);
         JLabel lblUser = new JLabel("Usuario:");
-        txtf_user = new JTextField(6);
+        txtf_user = new JTextField(8);
         panel_usuario.add(lblUser);
         panel_usuario.add(txtf_user);
         panel_este.add(panel_usuario);
@@ -84,8 +84,8 @@ public class VistaLogin extends JFrame implements ILogin {
         // Campo puerto
         JPanel panel_puerto = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
         panel_puerto.setBackground(Color.WHITE);
-        JLabel lblPuerto = new JLabel("Puerto:");
-        txtf_port = new JTextField(6);
+        JLabel lblPuerto = new JLabel(" Puerto:");
+        txtf_port = new JTextField(8);
         panel_puerto.add(lblPuerto);
         panel_puerto.add(txtf_port);
         panel_este.add(panel_puerto);
@@ -202,4 +202,6 @@ public class VistaLogin extends JFrame implements ILogin {
     public void setBtnInicio(boolean estado) {
     	this.btn_inicio.setEnabled(estado);
     }
+
+
 }

@@ -233,6 +233,7 @@ public class VistaInicio extends JFrame implements IVistaInicio {
 
     public void actualizarPanelChat(Conversacion conversacion) {
         this.panel_chat.setVisible(true);
+        lblContactoActivo.setText("Chat con: " + conversacion.getIntegrante());
         this.conversacion = conversacion;
         lista_chat.removeAll();
         for (Mensaje mensaje : conversacion.getMensajes()) {
@@ -241,10 +242,13 @@ public class VistaInicio extends JFrame implements IVistaInicio {
             String formateada = formatter.format(fecha);
             lista_chat.add("[" + formateada + "] " + mensaje.getEmisor() + ":\n" + mensaje);
         }
-        lblContactoActivo.setText("Chat con: " + conversacion.getIntegrante());
+        lblContactoActivo.revalidate();
+        lblContactoActivo.repaint();
         lista_chat.revalidate();
         lista_chat.repaint();
         lista_chat.makeVisible(lista_chat.getItemCount() - 1);
+        this.revalidate();
+        this.repaint();
     }
 
     public void actualizarListaConversaciones() {
@@ -409,6 +413,8 @@ public class VistaInicio extends JFrame implements IVistaInicio {
 
      return null;
  }
+
+
 
  public void mostrarModalError(String s) {
      JOptionPane.showMessageDialog(this, s, "Error", JOptionPane.ERROR_MESSAGE);

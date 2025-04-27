@@ -298,7 +298,8 @@ public class Sistema {
             new Thread(new Comunicador(new Solicitud(Solicitud.LOGOUT, Sistema.getInstance().getUsuarioLogueado().getNombre()), puertoServidor, ipServidor)).start();
             usuarioLogueado = null;
             vistaInicio.setVisible(false);
-            System.exit(0);
+            vistaLogin.setVisible(true);
+            //System.exit(0);
         } catch (IOException e) {
             vistaLogin.mostrarModalError("Error al cerrar la sesión.");
         }
