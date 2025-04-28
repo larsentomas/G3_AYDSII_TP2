@@ -303,6 +303,11 @@ public class VistaInicio extends JFrame implements IVistaInicio {
                 ultimoMensaje.setForeground(isSelected ? BLANCO : Color.GRAY);
                 ultimoMensaje.setFont(new Font("Arial", Font.PLAIN, 12));
                 panel.add(ultimoMensaje, BorderLayout.SOUTH);
+            }else{
+                JLabel ultimoMensaje = new JLabel("-------");
+                ultimoMensaje.setForeground(isSelected ? BLANCO : Color.GRAY);
+                ultimoMensaje.setFont(new Font("Arial", Font.PLAIN, 12));
+                panel.add(ultimoMensaje, BorderLayout.SOUTH);
             }
 
             if (conversacion.isNotificado() && conversacion != getConversacionActiva()) {
