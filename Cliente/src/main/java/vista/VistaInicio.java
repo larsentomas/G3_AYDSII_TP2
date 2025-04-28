@@ -238,7 +238,7 @@ public class VistaInicio extends JFrame implements IVistaInicio {
         lista_chat.removeAll();
         for (Mensaje mensaje : conversacion.getMensajes()) {
             Date fecha = new Date(mensaje.getTimestampCreado().getTime());
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yy h:m");
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yy hh:mm");
             String formateada = formatter.format(fecha);
             if (mensaje.getEmisor().equalsIgnoreCase(Sistema.getInstance().getUsuarioLogueado().getNombre())) {
                 lista_chat.add("[" + formateada + "] " + Sistema.getInstance().getUsuarioLogueado().getNombre() + ":\n" + mensaje);
