@@ -81,4 +81,36 @@ public class Controlador implements ActionListener {
     }
 
 
+    public Conversacion getConversacionActiva() {
+        return vistaInicio.getConversacionActiva();
+    }
+
+    public void actualizarPanelChat(Conversacion conversacion) {
+        vistaInicio.actualizarPanelChat(conversacion);
+    }
+
+    public void actualizarListaConversaciones() {
+        vistaInicio.actualizarListaConversaciones();
+    }
+
+
+    public void setVisible(boolean b) {
+        vistaInicio.setVisible(b);
+    }
+
+    public void setBienvenida(String nombre) {
+        vistaInicio.setBienvenida(nombre);
+    }
+
+    public void mostrarModalError(String s) {
+        vistaInicio.mostrarModalError(s);
+    }
+
+    public ArrayList<String> mostrarModalAgregarContacto(ArrayList<String> noAgendados) {
+        return vistaInicio.mostrarModalAgregarContacto(noAgendados);
+    }
+
+    public void mostrarModalExito(String s) {
+        vistaInicio.mostrarModalExito(s);
+    }
 }
