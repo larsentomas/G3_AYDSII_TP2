@@ -16,7 +16,6 @@ public class Servidor {
     private ServerSocket serverSocket;
     private HashMap<String, UsuarioServidor> directorio = new HashMap<>();
     private final Map<String, Queue<Mensaje>> colaMensajes = new ConcurrentHashMap<>();
-    private HandlerSolicitudes handler;
     private int intervaloPing = 5000;
     private boolean recibioEcho;
 
@@ -25,10 +24,8 @@ public class Servidor {
 
     public Servidor() {
         if (noExistePrincipal()) {
-            System.out.println("Hola1");
             start();
         } else {
-            System.out.println("Hola2");
             iniciarMonitoreo();
         }
     }
@@ -48,15 +45,15 @@ public class Servidor {
         new Servidor();
     }
 
-    private void start() {
+    public void start() {
         try {
+            //Por ahora el servidor corre en la maquina local
             serverSocket = new ServerSocket(puertoPrincipal);
+            System.out.println("Servidor iniciado en el puerto " + puertoPrincipal);
 
             while (true) {
-                System.out.println("Inicio servidor principal");
                 Socket socket = serverSocket.accept();
-                handler = new HandlerSolicitudes(socket, this);
-                new Thread(handler).start();
+                new Thread(new HandlerSolicitudes(socket, this)).start();
                 System.out.flush();
             }
         } catch (IOException e) {
@@ -69,28 +66,32 @@ public class Servidor {
         return colaMensajes.remove(username);
     }
 
-    public void logearCliente(String usuario, String ip, int puerto) throws IOException, UsuarioExistenteException {
-        if (validarDireccion(ip, puerto, usuario))
+    public boolean logearCliente(String usuario, String ip, int puerto) throws IOException, UsuarioExistenteException {
+        System.out.println("Directorio = " + directorio);
+        if (validarDireccion(ip, puerto, usuario)) {
             if (!directorio.containsKey(usuario)) {
                 UsuarioServidor nuevoUsuario = new UsuarioServidor(usuario, ip, puerto);
                 directorio.put(usuario, nuevoUsuario);
-                return;
+                return true;
             } else {
+                System.out.println("El usuario ya existe");
                 UsuarioServidor usuarioExistente = directorio.get(usuario);
                 if (!usuarioExistente.isConectado()) {
                     usuarioExistente.setConectado(true);
                     usuarioExistente.setIp(ip);
                     usuarioExistente.setPuerto(puerto);
-                    return;
+                    return true;
                 }
+                return false;
             }
+        }
         throw new UsuarioExistenteException(usuario);
     }
 
-    protected boolean validarDireccion(String ip, int puerto, String name) {
+    private boolean validarDireccion(String ip, int puerto, String name) {
         try {
-            String ipServdidor = InetAddress.getLocalHost().getHostAddress();
-            if (puerto == puerto && ip.equalsIgnoreCase(ipServdidor)) {
+            String ipServidor = InetAddress.getLocalHost().getHostAddress();
+            if (puerto == puertoPrincipal && ip.equalsIgnoreCase(ipServidor)) {
                 return false;
             }
         } catch (UnknownHostException e) {
@@ -136,7 +137,6 @@ public class Servidor {
         mensajes.add(mensaje);
     }
 
-
     public void iniciarMonitoreo() {
 
         try {
@@ -158,9 +158,27 @@ public class Servidor {
                         try {
                             ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
                             Object obj = inputStream.readObject();
-                            if (obj instanceof Respuesta request && request.getTipo().equalsIgnoreCase(Solicitud.ECHO)) {
-
-                                setRecibioEcho(true);
+                            if (obj instanceof Respuesta respuesta) {
+                                switch (respuesta.getTipo()) {
+                                    case Respuesta.ECHO -> {
+                                        setRecibioEcho(true);
+                                    }
+                                    case Respuesta.LOGIN -> {
+                                        String usuario = (String) respuesta.getDatos().get("usuario");
+                                        String ip = (String) respuesta.getDatos().get("ip");
+                                        int puerto = (int) respuesta.getDatos().get("puerto");
+                                        agregarDirectorio(usuario, new UsuarioServidor(usuario, ip, puerto));
+                                    }
+                                    case Respuesta.LOGOUT -> {
+                                        String usuario = (String) respuesta.getDatos().get("usuario");
+                                        directorio.get(usuario).setConectado(false);
+                                    }
+                                    case Respuesta.MENSAJES_OFFLINE -> {
+                                        String usuario = (String) respuesta.getDatos().get("usuario");
+                                        colaMensajes.remove(usuario);
+                                    }
+                                    default -> System.out.println("Solicitud desconocida");
+                                }
                             }
                         } catch(Exception e) {
                             System.out.println("Problemitas escuchar");
@@ -169,6 +187,9 @@ public class Servidor {
                 } catch (Exception e) {
                     System.out.println("Problemitas2");
                 }
+                System.out.println("SISTEMA SECUNDARIO");
+                System.out.println("Directorio = " + directorio);
+                System.out.println("Cola de mensajes = " + colaMensajes);
             }
         }).start();
     }
@@ -181,7 +202,6 @@ public class Servidor {
                     recibioEcho = false;
                     // Enviar Ping
                     new Thread(() -> {
-                        System.out.println("Envio Ping");
                         try (Socket socketPrincipal = new Socket(InetAddress.getLocalHost().getHostAddress(), puertoPrincipal)) {
                             Solicitud ping = new Solicitud(Solicitud.PING);
                             ObjectOutputStream outputStream = new ObjectOutputStream(socketPrincipal.getOutputStream());
@@ -204,7 +224,6 @@ public class Servidor {
     }
 
     public void setRecibioEcho(boolean b) {
-        System.out.println("Recibi eco");
         this.recibioEcho = b;
     }
 

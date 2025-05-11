@@ -55,8 +55,7 @@ public class HandlerSolicitudes implements Runnable {
                         enviarRespuestaCliente(usuarioConversacion, Respuesta.NUEVA_CONVERSACION, Map.of("usuarioConversacion", usuario), false, null);
                     }
                     case Solicitud.PING -> {
-                        System.out.println("Recibo Ping");
-                        enviarEcho();
+                        actualizarSecundario(Respuesta.ECHO, Map.of());
                     }
                     default ->
                             enviarRespuesta(request.getDatos().get("ipCliente").toString(), (int) request.getDatos().get("puertoCliente"), "UNKNOWN_REQUEST", Map.of(), true, "No se reconoce la solicitud");
@@ -67,10 +66,9 @@ public class HandlerSolicitudes implements Runnable {
         }
     }
 
-    public void enviarEcho() {
-        System.out.println("Envio eco");
+    public void actualizarSecundario(String tipo, Map<String, Object> datos) {
         try {
-            enviarRespuesta(InetAddress.getLocalHost().getHostAddress(), servidor.getPuertoSecundario(), Solicitud.ECHO, new HashMap<>(), false, null);
+            enviarRespuesta(InetAddress.getLocalHost().getHostAddress(), servidor.getPuertoSecundario(), tipo, datos, false, null);
         } catch (UnknownHostException e) {
             System.out.println("Problemitas");
         }
@@ -100,12 +98,14 @@ public class HandlerSolicitudes implements Runnable {
         String ipCliente = (String) request.getDatos().get("ipCliente");
         int puertoCliente = (int) request.getDatos().get("puertoCliente");
 
+
         if (name == null || name.isBlank()) {
             enviarRespuesta(ipCliente, puertoCliente, Respuesta.LOGIN,Map.of(), true, "Nombre de usuario no valido");
         }
 
         try {
-            servidor.logearCliente(name, ipCliente, puertoCliente);
+            if (servidor.logearCliente(name, ipCliente, puertoCliente))
+                actualizarSecundario(Respuesta.LOGIN, Map.of("usuario", name, "ip", ipCliente, "puerto", puertoCliente));
             handleColaMensajes(name);
             enviarRespuestaCliente(name, Respuesta.LOGIN, Map.of(), false, null);
         } catch (IOException e) {
@@ -119,6 +119,7 @@ public class HandlerSolicitudes implements Runnable {
     private void handleLogout(String usuario){
         servidor.getUsuario(usuario).setConectado(false);
         enviarRespuestaCliente(usuario, Respuesta.LOGOUT, Map.of(), false, null);
+        actualizarSecundario(Respuesta.LOGOUT, Map.of("usuario", usuario));
     }
 
     private void handleDirectorio(String usuario){
@@ -156,6 +157,7 @@ public class HandlerSolicitudes implements Runnable {
                 ArrayList<Mensaje> mensajesUsuario = mensajes.computeIfAbsent(mensaje.getEmisor(), k -> new ArrayList<>());
                 mensajesUsuario.add(mensaje);
             }
+            actualizarSecundario(Respuesta.MENSAJES_OFFLINE, Map.of("usuario", usuario));
         }
 
         // Crea el map para enviar los mensajes por usuario
