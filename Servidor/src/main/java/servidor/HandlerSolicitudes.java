@@ -6,19 +6,18 @@ import common.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
+import java.net.UnknownHostException;
+import java.util.*;
 
-public class HandlerClientes implements Runnable {
+public class HandlerSolicitudes implements Runnable {
     private Socket socketRecepcion;
     private Servidor servidor;
     private ObjectInputStream inputStream;
     private volatile boolean conectado = true;
 
-    public HandlerClientes(Socket socketRecepcion, Servidor servidor) throws IOException {
+    public HandlerSolicitudes(Socket socketRecepcion, Servidor servidor) throws IOException {
         this.socketRecepcion = socketRecepcion;
         this.servidor = servidor;
         this.inputStream = new ObjectInputStream(socketRecepcion.getInputStream());
@@ -55,12 +54,25 @@ public class HandlerClientes implements Runnable {
                         String usuarioConversacion = (String) request.getDatos().get("usuarioConversacion");
                         enviarRespuestaCliente(usuarioConversacion, Respuesta.NUEVA_CONVERSACION, Map.of("usuarioConversacion", usuario), false, null);
                     }
+                    case Solicitud.PING -> {
+                        System.out.println("Recibo Ping");
+                        enviarEcho();
+                    }
                     default ->
                             enviarRespuesta(request.getDatos().get("ipCliente").toString(), (int) request.getDatos().get("puertoCliente"), "UNKNOWN_REQUEST", Map.of(), true, "No se reconoce la solicitud");
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
             System.out.println("Connection lost with client.");
+        }
+    }
+
+    public void enviarEcho() {
+        System.out.println("Envio eco");
+        try {
+            enviarRespuesta(InetAddress.getLocalHost().getHostAddress(), servidor.getPuertoSecundario(), Solicitud.ECHO, new HashMap<>(), false, null);
+        } catch (UnknownHostException e) {
+            System.out.println("Problemitas");
         }
     }
 
@@ -130,7 +142,7 @@ public class HandlerClientes implements Runnable {
             return;
         }
 
-        servidor.routeMensaje(mensaje, usuarioReceptor);
+        routeMensaje(mensaje, usuarioReceptor);
         enviarRespuestaCliente(usuarioEmisor, Respuesta.ENVIAR_MENSAJE, Map.of("mensaje", mensaje, "receptor", usuarioReceptor), false, null);
     }
 
@@ -150,5 +162,18 @@ public class HandlerClientes implements Runnable {
         Map<String, Object> map = new HashMap<>(mensajes);
         enviarRespuestaCliente(usuario, Respuesta.MENSAJES_OFFLINE, map, false, null);
 
+    }
+
+    public void routeMensaje(Mensaje mensaje, String recep) {
+        UsuarioServidor receptor = servidor.getUsuario(recep);
+        if (receptor != null) {
+            if (receptor.isConectado()) {
+                enviarRespuestaCliente(mensaje.getEmisor(), Respuesta.MENSAJE_RECIBIDO, Map.of("mensaje", mensaje), false, null);
+            } else {
+                servidor.agregarMensajeACola(receptor.getNombre(), mensaje);
+            }
+        } else {
+            System.out.println("Usuario no encontrado.");
+        }
     }
 }

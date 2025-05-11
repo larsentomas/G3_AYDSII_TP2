@@ -12,11 +12,19 @@ public class Solicitud implements Serializable {
     public final static String DIRECTORIO = "DIRECTORIO";
     public final static String LOGOUT = "LOGOUT";
     public final static String ENVIAR_MENSAJE = "ENVIAR_MENSAJE";
+    public final static String PING = "PING";
+    public final static String ECHO = "ECHO";
 
 
     private final String tipo;
     private final Map<String, Object> datos;
 
+    // Para echos
+    public Solicitud(String tipo) {
+        this.tipo = tipo;
+        this.datos = new HashMap<>();
+
+    }
 
     public Solicitud(String tipo, String usuario) {
         this.tipo = tipo;

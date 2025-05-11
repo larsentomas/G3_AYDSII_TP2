@@ -137,7 +137,7 @@ public class Sistema {
                 }
                 case Respuesta.DIRECTORIO -> recibirListaUsuarios(respuesta);
                 case Respuesta.LOGIN -> {
-                    System.out.println("Respuesta de login");
+                    System.out.println("Respuesta de login:" + respuesta.getDatos() + " " + respuesta.getError() + " " + respuesta.getTipo());
                     if (respuesta.getError()) {
                         // Si el usuario no es valido, se le muestra un mensaje de error
                         usuarioLogueado = null;
@@ -267,6 +267,16 @@ public class Sistema {
         }
     }
 
+    public boolean servidorActivo(String ip, int puerto) {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(ip, puerto), 2000); // timeout de 2 segundos
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+
     public void iniciarUsuario(String nickname, String puerto) throws PuertoInvalidoException {
         try {
             // Me fijo si el puerto es valido
@@ -278,6 +288,10 @@ public class Sistema {
             // Iniciar el servidor para recibir mensajes
             new Thread(new HandlerMensajes(usuarioLogueado)).start();
 
+            if (!servidorActivo(ipServidor, puertoServidor)) {
+                controladorLogin.mostrarModalError("No se pudo conectar al servidor");
+                return;
+            }
             // Iniciar el hilo para enviar mensajes
             Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
             new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
