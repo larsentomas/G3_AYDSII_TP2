@@ -149,24 +149,28 @@ public class Servidor {
     }
 
     public void escuchar(ServerSocket serverSocket) {
-        while(true) {
-            try {
-                Socket socket = serverSocket.accept();
-                new Thread(() -> {
-                    try {
-                        ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
-                        Object obj = inputStream.readObject();
-                        if (obj instanceof Solicitud request && request.getTipo().equalsIgnoreCase(Solicitud.ECHO)) {
-                            setRecibioEcho(true);
+        System.out.println("Esuchando");
+        new Thread(() -> {
+            while(true) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    new Thread(() -> {
+                        try {
+                            ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+                            Object obj = inputStream.readObject();
+                            if (obj instanceof Respuesta request && request.getTipo().equalsIgnoreCase(Solicitud.ECHO)) {
+
+                                setRecibioEcho(true);
+                            }
+                        } catch(Exception e) {
+                            System.out.println("Problemitas escuchar");
                         }
-                    } catch(Exception e) {
-                        System.out.println("Problemitas escuchar");
-                    }
-                }).start();
-            } catch (Exception e) {
-                System.out.println("Problemitas2");
+                    }).start();
+                } catch (Exception e) {
+                    System.out.println("Problemitas2");
+                }
             }
-        }
+        }).start();
     }
 
     public void monitorear(ServerSocket socketSecundario) {
