@@ -67,14 +67,12 @@ public class Servidor {
     }
 
     public boolean logearCliente(String usuario, String ip, int puerto) throws IOException, UsuarioExistenteException {
-        System.out.println("Directorio = " + directorio);
         if (validarDireccion(ip, puerto, usuario)) {
             if (!directorio.containsKey(usuario)) {
                 UsuarioServidor nuevoUsuario = new UsuarioServidor(usuario, ip, puerto);
                 directorio.put(usuario, nuevoUsuario);
                 return true;
             } else {
-                System.out.println("El usuario ya existe");
                 UsuarioServidor usuarioExistente = directorio.get(usuario);
                 if (!usuarioExistente.isConectado()) {
                     usuarioExistente.setConectado(true);
