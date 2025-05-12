@@ -34,6 +34,7 @@ public class Servidor {
 
             while (true) {
                 Socket socket = serverSocket.accept();
+                System.out.println("socket: " + socket);
                 new Thread(new HandlerClientes(socket, this)).start();
                 System.out.flush();
             }

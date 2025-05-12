@@ -83,6 +83,10 @@ public class Sistema {
         return vistaLogin;
     }
 
+    public static Controlador getControlador() {return controlador;}
+
+    public static ControladorLogin getControladorLogin() {return controladorLogin;}
+
     public Conversacion crearConversacion(String apodo) {
         // Crear una nueva conversacion
         String usuario = usuarioLogueado.getContacto(apodo);
@@ -267,14 +271,6 @@ public class Sistema {
         }
     }
 
-    public boolean servidorActivo(String ip, int puerto) {
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(ip, puerto), 2000); // timeout de 2 segundos
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
-    }
 
     public void iniciarUsuario(String nickname, String puerto) throws PuertoInvalidoException {
         try {
@@ -286,10 +282,7 @@ public class Sistema {
 
             // Iniciar el servidor para recibir mensajes
             new Thread(new HandlerMensajes(usuarioLogueado)).start();
-            if (!servidorActivo(ipServidor, puertoServidor)) {
-                controladorLogin.mostrarModalError("No se pudo conectar al servidor");
-                return;
-            }
+
             // Iniciar el hilo para enviar mensajes
             Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
             new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();

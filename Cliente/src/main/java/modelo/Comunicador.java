@@ -26,6 +26,9 @@ public class Comunicador implements Runnable {
             out.writeObject(solicitud);
             out.flush();
         } catch (IOException e) {
+            if (e.getMessage().contains("Connection refused")) {
+                Sistema.getInstance().getControladorLogin().mostrarModalError("Error: Conexión rechazada.");
+            }
             System.err.println("Error al enviar el mensaje: " + e.getMessage());
         }
     }
