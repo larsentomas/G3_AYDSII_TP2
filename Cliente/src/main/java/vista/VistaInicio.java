@@ -423,7 +423,16 @@ public class VistaInicio extends JFrame implements IVistaInicio {
      return null;
  }
 
-
+ public  boolean mostrarConfirmacionCerrarSesion() {
+        int respuesta = JOptionPane.showConfirmDialog(
+                null,
+                "¿Estás seguro que quieres cerrar sesión?",
+                "Confirmación",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+        return respuesta == JOptionPane.YES_OPTION;
+    }
 
  public void mostrarModalError(String s) {
      JOptionPane.showMessageDialog(this, s, "Error", JOptionPane.ERROR_MESSAGE);

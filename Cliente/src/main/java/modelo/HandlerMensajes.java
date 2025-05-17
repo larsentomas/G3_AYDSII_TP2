@@ -19,7 +19,6 @@ public class HandlerMensajes implements Runnable {
             System.out.println("Escuchando en el puerto " + usuario.getPuerto() + "...");
             while (true) {
                 Socket socket = serverSocket.accept();
-
                 new Thread(new ReceptorRespuestas(socket)).start();
             }
         } catch (IOException e) {

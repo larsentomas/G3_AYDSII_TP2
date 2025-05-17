@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,7 +34,7 @@ public class Sistema {
     static Controlador controlador;
     static ControladorLogin controladorLogin;
 
-    private Solicitud esperando;
+    private HashMap<Solicitud, int> esperando;
     private int intentos = 0;
 
 
@@ -60,13 +61,15 @@ public class Sistema {
 
         // Abrir y leer el archivo de configuracion
         try {
-            ipServidor = InetAddress.getLocalHost().getHostAddress();
+            //ipServidor = InetAddress.getLocalHost().getHostAddress();
+            ipServidor = Config.get("servidor.ip");
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
-        puertoServidor = 6000;
+        //puertoServidor = 6000;
+        puertoServidor = Config.getInt("servidor.puerto");
 
-        esperando = null;
+        esperando = new HashMap<Solicitud, int>();
 
     }
 
@@ -98,8 +101,7 @@ public class Sistema {
         Solicitud sol = new Solicitud(Solicitud.NUEVA_CONVERSACION, Map.of("usuario", usuarioLogueado.getNombre(), "usuarioConversacion", usuario));
         try {
             new Thread(new Comunicador(sol, puertoServidor, ipServidor)).start();
-            esperando = sol;
-            intentos = 1;
+            esperando.put(sol, 1);
             System.out.println("A la espera de confirmacion");
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -112,31 +114,13 @@ public class Sistema {
     public void enviarMensaje(String contenido, Conversacion conversacion) throws IOException {
         Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", new Mensaje(contenido, usuarioLogueado.getNombre()), "receptor", conversacion.getIntegrante()));
         new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
-        esperando = solicitud;
-        intentos = 1;
+        esperando.put(solicitud, 1);
         System.out.println("A la espera de confirmacion");
     }
 
     public void recibirObj(Object obj) {
         if (obj instanceof Respuesta respuesta) {
             System.out.println(respuesta);
-            if (esperando != null && (Integer) respuesta.getDatos().get("solicitud") == esperando.getId()) {
-                esperando = null;
-                intentos = 0;
-                System.out.println("Recibi la confirmacion");
-            } else if (esperando != null && intentos < 3) {
-                // Se prueba reenviar la solicitud
-                System.out.println("no recibi confirmacion, vuelvo a intentar");
-                try {
-                    new Thread(new Comunicador(esperando, puertoServidor, ipServidor)).start();
-                    intentos += 1;
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            } else if (intentos == 3) {
-                // TODO: ACTIVAR SECUNDARIO Y MANDAR SOLICITUD??
-                System.out.println("intente muchas veces, problemas");
-            }
             switch(respuesta.getTipo()) {
                 case Respuesta.MENSAJE_RECIBIDO -> {
 
@@ -268,8 +252,7 @@ public class Sistema {
             // Enviar solicitud al servidor para obtener la lista de posibles contactos
             Solicitud s = new Solicitud(Solicitud.DIRECTORIO, Sistema.getInstance().getUsuarioLogueado().getNombre());
             new Thread(new Comunicador(s, puertoServidor, ipServidor)).start();
-            esperando = s;
-            intentos = 1;
+            esperando.put(s, 1);
             System.out.println("A la espera de confirmacion");
         }
     }
@@ -343,7 +326,7 @@ public class Sistema {
             new Thread(new Comunicador(new Solicitud(Solicitud.LOGOUT, Sistema.getInstance().getUsuarioLogueado().getNombre()), puertoServidor, ipServidor)).start();
             usuarioLogueado = null;
             controlador.setVisible(false);
-            controladorLogin.setVisible(true);
+           // controladorLogin.setVisible(true);
         } catch (IOException e) {
             controladorLogin.mostrarModalError("Error al cerrar la sesión.");
         }

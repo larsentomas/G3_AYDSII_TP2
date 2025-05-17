@@ -72,10 +72,11 @@ public class Controlador implements ActionListener {
             }
         } else if (e.getActionCommand().equalsIgnoreCase("LOGOUT")) {
             // Cerrar la sesión del usuario
-            Sistema.cerrarSesion();
-            vistaInicio.dispose();
-            vistaInicio.setVisible(false);
-
+            if (vistaInicio.mostrarConfirmacionCerrarSesion()){
+                Sistema.cerrarSesion();
+                vistaInicio.dispose();
+                vistaInicio.setVisible(false);
+            }
         }
     }
 

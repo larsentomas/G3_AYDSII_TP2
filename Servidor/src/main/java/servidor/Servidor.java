@@ -103,7 +103,7 @@ public class Servidor {
         return true;
     }
 
-    public void eliminarCliente(String username){
+    public void eliminarCliente(String username) {
         directorio.remove(username);
     }
 
@@ -140,7 +140,7 @@ public class Servidor {
         try {
             ServerSocket socket = new ServerSocket(puertoSecundario);
             escuchar(socket);
-            monitorear(socket);
+            monitorear();
         } catch (Exception e) {
             System.out.println("Problemitas");
         }
@@ -149,7 +149,7 @@ public class Servidor {
     public void escuchar(ServerSocket serverSocket) {
         System.out.println("Esuchando");
         new Thread(() -> {
-            while(true) {
+            while (true) {
                 try {
                     Socket socket = serverSocket.accept();
                     new Thread(() -> {
@@ -178,7 +178,7 @@ public class Servidor {
                                     default -> System.out.println("Solicitud desconocida");
                                 }
                             }
-                        } catch(Exception e) {
+                        } catch (Exception e) {
                             System.out.println("Problemitas escuchar");
                         }
                     }).start();
@@ -192,7 +192,7 @@ public class Servidor {
         }).start();
     }
 
-    public void monitorear(ServerSocket socketSecundario) {
+    public void monitorear() {
         new Thread(() -> {
             System.out.println("Inicio monitoreo");
             while (true) {
@@ -211,7 +211,8 @@ public class Servidor {
                     }).start();
 
                     Thread.sleep(intervaloPing);
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
                 if (!recibioEcho) {
                     System.out.println("No recibi eco");
                     break; // Empieza a actuar como primario
@@ -221,11 +222,14 @@ public class Servidor {
         iniciarBackUp();
     }
 
+
     public void setRecibioEcho(boolean b) {
         this.recibioEcho = b;
     }
 
+
     public void iniciarBackUp() {
         System.out.println("Inicio backup");
     }
+
 }
