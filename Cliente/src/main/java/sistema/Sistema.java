@@ -288,10 +288,10 @@ public class Sistema {
             // Iniciar el servidor para recibir mensajes
             new Thread(new HandlerMensajes(usuarioLogueado)).start();
 
-            //if (!servidorActivo(ipServidor, puertoServidor)) {
-            //    controladorLogin.mostrarModalError("No se pudo conectar al servidor");
-            //    return;
-            //}
+            if (!servidorActivo(ipServidor, puertoServidor)) {
+                controladorLogin.mostrarModalError("No se pudo conectar al servidor");
+                return;
+            }
             // Iniciar el hilo para enviar mensajes
             Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
             new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
