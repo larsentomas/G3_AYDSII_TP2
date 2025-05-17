@@ -14,6 +14,7 @@ public class Respuesta implements Serializable {
     public final static String MENSAJE_RECIBIDO = "MENSAJE_RECIBIDO";
     public final static String MENSAJES_OFFLINE = "MENSAJES_OFFLINE";
     public final static String ECHO = "ECHO";
+    public final static String CONFIRMACION = "CONFIRMACION";
 
     private final String tipo;
     private final Map<String, Object> datos;

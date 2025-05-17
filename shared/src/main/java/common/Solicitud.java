@@ -3,9 +3,12 @@ package common;
 
 import java.util.*;
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Solicitud implements Serializable {
     private static final long serialVersionUID = 1L;
+
+    static AtomicInteger nextId = new AtomicInteger();
 
     public final static String NUEVA_CONVERSACION = "NUEVA_CONVERSACION";
     public final static String LOGIN = "LOGIN";
@@ -15,22 +18,26 @@ public class Solicitud implements Serializable {
     public final static String PING = "PING";
 
 
+    private int id;
     private final String tipo;
     private final Map<String, Object> datos;
 
     // Para echos
     public Solicitud(String tipo) {
+        id = nextId.incrementAndGet();
         this.tipo = tipo;
         this.datos = new HashMap<>();
 
     }
 
     public Solicitud(String tipo, String usuario) {
+        id = nextId.incrementAndGet();
         this.tipo = tipo;
         this.datos = Map.of("usuario", usuario);
     }
 
     public Solicitud(String tipo, Map<String, Object> datos) {
+        id = nextId.incrementAndGet();
         this.tipo = tipo;
         this.datos = datos;
     }
@@ -50,6 +57,10 @@ public class Solicitud implements Serializable {
 
     public Map<String, Object> getDatos() {
         return datos;
+    }
+
+    public int getId() {
+        return id;
     }
 
     @Override

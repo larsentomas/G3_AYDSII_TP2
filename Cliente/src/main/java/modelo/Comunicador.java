@@ -21,7 +21,6 @@ public class Comunicador implements Runnable {
     @Override
     public void run() {
         try (Socket s = new Socket(ip, puerto)) {
-            System.out.println("Conectando al servidor...");
             ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
             out.writeObject(solicitud);
             out.flush();

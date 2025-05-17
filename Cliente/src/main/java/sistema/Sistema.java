@@ -12,6 +12,7 @@ import vista.VistaLogin;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Map;
@@ -32,6 +33,9 @@ public class Sistema {
     static Controlador controlador;
     static ControladorLogin controladorLogin;
 
+    private Solicitud esperando;
+    private int intentos = 0;
+
 
     public static void main(String[] args) {
         instance = Sistema.getInstance();
@@ -51,17 +55,9 @@ public class Sistema {
 
     // Singleton
 
-    public static Sistema getInstance() {
-        if (instance == null) {
-            instance = new Sistema();
-            Sistema.setServidor();
-        }
-        return instance;
-    }
+    private Sistema() {
+        // Constructor privado para evitar instanciación externa
 
-    // Getters y Setters
-
-    public static void setServidor() {
         // Abrir y leer el archivo de configuracion
         try {
             ipServidor = InetAddress.getLocalHost().getHostAddress();
@@ -69,7 +65,19 @@ public class Sistema {
             throw new RuntimeException(e);
         }
         puertoServidor = 6000;
+
+        esperando = null;
+
     }
+
+    public static Sistema getInstance() {
+        if (instance == null) {
+            instance = new Sistema();
+        }
+        return instance;
+    }
+
+    // Getters y Setters
 
     public UsuarioLogueado getUsuarioLogueado() {
         return usuarioLogueado;
@@ -90,6 +98,9 @@ public class Sistema {
         Solicitud sol = new Solicitud(Solicitud.NUEVA_CONVERSACION, Map.of("usuario", usuarioLogueado.getNombre(), "usuarioConversacion", usuario));
         try {
             new Thread(new Comunicador(sol, puertoServidor, ipServidor)).start();
+            esperando = sol;
+            intentos = 1;
+            System.out.println("A la espera de confirmacion");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -101,43 +112,60 @@ public class Sistema {
     public void enviarMensaje(String contenido, Conversacion conversacion) throws IOException {
         Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", new Mensaje(contenido, usuarioLogueado.getNombre()), "receptor", conversacion.getIntegrante()));
         new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
+        esperando = solicitud;
+        intentos = 1;
+        System.out.println("A la espera de confirmacion");
     }
 
     public void recibirObj(Object obj) {
         if (obj instanceof Respuesta respuesta) {
+            System.out.println(respuesta);
+            if (esperando != null && (Integer) respuesta.getDatos().get("solicitud") == esperando.getId()) {
+                esperando = null;
+                intentos = 0;
+                System.out.println("Recibi la confirmacion");
+            } else if (esperando != null && intentos < 3) {
+                // Se prueba reenviar la solicitud
+                System.out.println("no recibi confirmacion, vuelvo a intentar");
+                try {
+                    new Thread(new Comunicador(esperando, puertoServidor, ipServidor)).start();
+                    intentos += 1;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            } else if (intentos == 3) {
+                // TODO: ACTIVAR SECUNDARIO Y MANDAR SOLICITUD??
+                System.out.println("intente muchas veces, problemas");
+            }
             switch(respuesta.getTipo()) {
                 case Respuesta.MENSAJE_RECIBIDO -> {
+
                     Mensaje mensaje = (Mensaje) respuesta.getDatos().get("mensaje");
                     String emisor = mensaje.getEmisor();
-
-                    System.out.println("Recibo " + mensaje + " de " + emisor);
 
                     Conversacion conversacion;
                     if (!usuarioLogueado.getContactos().containsKey(emisor)) {
                         try {
                             usuarioLogueado.agregarContacto(emisor, emisor);
                             conversacion = usuarioLogueado.crearConversacion(emisor);
-                            System.out.println("No existia conversacion con " + emisor + ", la creo");
                         } catch (ContactoRepetidoException e) {
                             throw new RuntimeException(e);
                         }
                     } else {
                         conversacion = usuarioLogueado.getConversacionCon(emisor);
                     }
-                    System.out.println("Conversacion es " + conversacion);
                     agregarMensajeConversacion(mensaje, conversacion);
 
                     if (conversacion == controlador.getConversacionActiva()) {
                         controlador.actualizarPanelChat(conversacion);
                     } else {
                         conversacion.setNotificado(true);
-                        controlador.actualizarListaConversaciones();
                     }
+                    controlador.actualizarListaConversaciones();
 
                 }
                 case Respuesta.DIRECTORIO -> recibirListaUsuarios(respuesta);
                 case Respuesta.LOGIN -> {
-                    System.out.println("Respuesta de login:" + respuesta.getDatos() + " " + respuesta.getError() + " " + respuesta.getTipo());
                     if (respuesta.getError()) {
                         // Si el usuario no es valido, se le muestra un mensaje de error
                         usuarioLogueado = null;
@@ -213,7 +241,6 @@ public class Sistema {
         if (!noAgendados.isEmpty()) {
             // Mostrar el modal para agregar contacto con las opciones de listaUsuarios
             ArrayList<String> nuevoContacto = controlador.mostrarModalAgregarContacto(noAgendados);
-            System.out.println(nuevoContacto);
             if (nuevoContacto != null) {
                 try {
                     getUsuarioLogueado().agregarContacto(nuevoContacto.getFirst(), nuevoContacto.get(1));
@@ -239,7 +266,11 @@ public class Sistema {
     public void getPosiblesContactos() throws IOException {
         if (usuarioLogueado != null) {
             // Enviar solicitud al servidor para obtener la lista de posibles contactos
-            new Thread(new Comunicador(new Solicitud(Solicitud.DIRECTORIO, Sistema.getInstance().getUsuarioLogueado().getNombre()), puertoServidor, ipServidor)).start();
+            Solicitud s = new Solicitud(Solicitud.DIRECTORIO, Sistema.getInstance().getUsuarioLogueado().getNombre());
+            new Thread(new Comunicador(s, puertoServidor, ipServidor)).start();
+            esperando = s;
+            intentos = 1;
+            System.out.println("A la espera de confirmacion");
         }
     }
 
@@ -268,8 +299,10 @@ public class Sistema {
     }
 
     public boolean servidorActivo(String ip, int puerto) {
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(ip, puerto), 2000); // timeout de 2 segundos
+        try (Socket socket = new Socket(ip, puerto)) {
+            // Si o si hay que escribir algo porque sino el servidor intenta leer y no hay nada y falla
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            out.writeObject("PROBANDO");
             return true;
         } catch (IOException e) {
             return false;
@@ -295,11 +328,9 @@ public class Sistema {
             // Iniciar el hilo para enviar mensajes
             Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
             new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
-
-            // El handler de mensajes esta a la espera de mensajes
-            // El comunicador va avisarle al servidor que quiere hacer login con un nickname
-            // caso 1: El servidor le dice que el nickname ya existe, le envia un mensaje de error al handler
-            // caso 2: El servidor le dice que el nickname no existe, le envia un mensaje de exito al handler
+            esperando = solicitud;
+            intentos = 1;
+            System.out.println("A la espera de confirmacion");
 
         } catch (IOException e) {
             usuarioLogueado = null;
