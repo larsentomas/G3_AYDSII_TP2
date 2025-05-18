@@ -1,4 +1,5 @@
 package modelo;
+import java.io.InputStream;
 import java.util.Properties;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -13,6 +14,7 @@ public class Config {
             FileInputStream input = new FileInputStream("config.properties");
             props.load(input);
         } catch (IOException e) {
+            e.printStackTrace();
             System.err.println("No se pudo leer el archivo de configuración.");
         }
     }
@@ -20,11 +22,9 @@ public class Config {
     public static String get(String clave) {
         return props.getProperty(clave);
     }
-
     public static int getInt(String clave) {
         return Integer.parseInt(get(clave));
     }
-
     public static boolean getBoolean(String clave) {
         return Boolean.parseBoolean(get(clave));
     }

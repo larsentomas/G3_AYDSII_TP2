@@ -14,10 +14,8 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Sistema {
 
@@ -34,9 +32,9 @@ public class Sistema {
     static Controlador controlador;
     static ControladorLogin controladorLogin;
 
-    private HashMap<Solicitud, int> esperando;
-    private int intentos = 0;
-
+    private final Map<Integer, Long> pendingPings = new ConcurrentHashMap<>();
+    private volatile boolean serverOnline = true;
+    private volatile int failedPings = 0;
 
     public static void main(String[] args) {
         instance = Sistema.getInstance();
@@ -60,16 +58,10 @@ public class Sistema {
         // Constructor privado para evitar instanciación externa
 
         // Abrir y leer el archivo de configuracion
-        try {
-            //ipServidor = InetAddress.getLocalHost().getHostAddress();
-            ipServidor = Config.get("servidor.ip");
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        //ipServidor = InetAddress.getLocalHost().getHostAddress();
+        ipServidor = Config.get("servidor.ip");
         //puertoServidor = 6000;
         puertoServidor = Config.getInt("servidor.puerto");
-
-        esperando = new HashMap<Solicitud, int>();
 
     }
 
@@ -101,7 +93,6 @@ public class Sistema {
         Solicitud sol = new Solicitud(Solicitud.NUEVA_CONVERSACION, Map.of("usuario", usuarioLogueado.getNombre(), "usuarioConversacion", usuario));
         try {
             new Thread(new Comunicador(sol, puertoServidor, ipServidor)).start();
-            esperando.put(sol, 1);
             System.out.println("A la espera de confirmacion");
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -114,7 +105,6 @@ public class Sistema {
     public void enviarMensaje(String contenido, Conversacion conversacion) throws IOException {
         Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", new Mensaje(contenido, usuarioLogueado.getNombre()), "receptor", conversacion.getIntegrante()));
         new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
-        esperando.put(solicitud, 1);
         System.out.println("A la espera de confirmacion");
     }
 
@@ -185,6 +175,12 @@ public class Sistema {
                     usuarioLogueado.crearConversacion(usuarioConversacion);
                     controlador.actualizarListaConversaciones();
                 }
+                case Respuesta.ECHO -> {
+                    int requestId = (int) respuesta.getDatos().get("id");
+                    synchronized (pendingPings) {
+                        pendingPings.remove(requestId);
+                    }
+                }
                 case Respuesta.MENSAJES_OFFLINE -> recibirMensajesOffline(respuesta);
             }
         }
@@ -252,7 +248,6 @@ public class Sistema {
             // Enviar solicitud al servidor para obtener la lista de posibles contactos
             Solicitud s = new Solicitud(Solicitud.DIRECTORIO, Sistema.getInstance().getUsuarioLogueado().getNombre());
             new Thread(new Comunicador(s, puertoServidor, ipServidor)).start();
-            esperando.put(s, 1);
             System.out.println("A la espera de confirmacion");
         }
     }
@@ -307,12 +302,13 @@ public class Sistema {
             if (!servidorActivo(ipServidor, puertoServidor)) {
                 controladorLogin.mostrarModalError("No se pudo conectar al servidor");
                 return;
+            }else{
+                selfTest(ipServidor, puertoServidor, usuarioLogueado);
             }
             // Iniciar el hilo para enviar mensajes
             Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
             new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
-            esperando = solicitud;
-            intentos = 1;
+
             System.out.println("A la espera de confirmacion");
 
         } catch (IOException e) {
@@ -332,4 +328,61 @@ public class Sistema {
         }
     }
 
+    //SELF-TEST
+
+    private void selfTest(String ip, int puerto, UsuarioLogueado usuarioLogueado) {
+        new Thread(() -> {
+            while (serverOnline) {
+                try {
+                    HashMap datos = new HashMap<>();
+                    datos.put("usuario", usuarioLogueado.getNombre());
+                    datos.put("ipCliente", InetAddress.getLocalHost().getHostAddress());
+                    datos.put("puertoCliente", usuarioLogueado.getPuerto());
+                    datos.put("origen", "cliente");
+                    Solicitud ping = new Solicitud(Solicitud.PING, datos);
+
+                    synchronized (pendingPings) {
+                        pendingPings.put(ping.getId(), System.currentTimeMillis());
+                    }
+
+                    new Thread(new Comunicador(ping, puerto, ip)).start();
+
+                    Thread.sleep(2000);
+
+                    synchronized (pendingPings) {
+                        Iterator<Map.Entry<Integer, Long>> it = pendingPings.entrySet().iterator();// Counter for failed pings
+                        while (it.hasNext() && failedPings < 3) {
+                            Map.Entry<Integer, Long> entry = it.next();
+                            if (System.currentTimeMillis() - entry.getValue() > 3000) {
+                                failedPings++;
+                                it.remove();
+                            }
+                        }
+                        if (failedPings >= 3) {
+                            serverOnline = false;
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            controlador.mostrarModalError("El servidor no responde, se cerrará la sesión actual");
+            cerrarSesion();
+        }).start();
+
+        new Thread(() -> {
+            while (serverOnline) {
+                try {
+                    Thread.sleep(20000);
+                    synchronized (pendingPings) {
+                        failedPings = 0;
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }).start();
+    }
 }

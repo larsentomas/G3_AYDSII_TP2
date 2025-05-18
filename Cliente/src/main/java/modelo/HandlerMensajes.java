@@ -16,7 +16,6 @@ public class HandlerMensajes implements Runnable {
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(usuario.getPuerto())) {
-            System.out.println("Escuchando en el puerto " + usuario.getPuerto() + "...");
             while (true) {
                 Socket socket = serverSocket.accept();
                 new Thread(new ReceptorRespuestas(socket)).start();

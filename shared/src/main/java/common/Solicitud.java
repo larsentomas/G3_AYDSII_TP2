@@ -17,7 +17,6 @@ public class Solicitud implements Serializable {
     public final static String ENVIAR_MENSAJE = "ENVIAR_MENSAJE";
     public final static String PING = "PING";
 
-
     private int id;
     private final String tipo;
     private final Map<String, Object> datos;
