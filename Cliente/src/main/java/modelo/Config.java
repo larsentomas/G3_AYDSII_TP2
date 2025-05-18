@@ -11,8 +11,7 @@ public class Config {
 
     static {
         try {
-            System.out.println("Current working directory: " + System.getProperty("user.dir"));
-            InputStream input = Config.class.getClassLoader().getResourceAsStream("config.properties");
+            FileInputStream input = new FileInputStream("config.properties");
             props.load(input);
         } catch (IOException e) {
             e.printStackTrace();

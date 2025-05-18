@@ -227,7 +227,6 @@ public class Servidor {
                             System.out.println("Error al enviar el ping");
                         }
                     }).start();
-
                     Thread.sleep(intervaloPing);
                 } catch (Exception e) {
 
@@ -254,5 +253,4 @@ public class Servidor {
         serverSocket.close();
         start();
     }
-
 }

@@ -16,9 +16,6 @@ import java.io.ObjectOutputStream;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class Sistema {
 
@@ -37,6 +34,7 @@ public class Sistema {
 
     private final Map<Integer, Long> pendingPings = new ConcurrentHashMap<>();
     private volatile boolean serverOnline = true;
+    private volatile int failedPings = 0;
 
     public static void main(String[] args) {
         instance = Sistema.getInstance();
@@ -349,15 +347,13 @@ public class Sistema {
 
                     new Thread(new Comunicador(ping, puerto, ip)).start();
 
-                    Thread.sleep(3000);
+                    Thread.sleep(2000);
 
                     synchronized (pendingPings) {
-                        Iterator<Map.Entry<Integer, Long>> it = pendingPings.entrySet().iterator();
-                        int failedPings = 0; // Counter for failed pings
-                        while (it.hasNext()) {
+                        Iterator<Map.Entry<Integer, Long>> it = pendingPings.entrySet().iterator();// Counter for failed pings
+                        while (it.hasNext() && failedPings < 3) {
                             Map.Entry<Integer, Long> entry = it.next();
-                            if (System.currentTimeMillis() - entry.getValue() > 5000) {
-                                System.err.println("Ping fallido");
+                            if (System.currentTimeMillis() - entry.getValue() > 3000) {
                                 failedPings++;
                                 it.remove();
                             }
@@ -372,7 +368,21 @@ public class Sistema {
                     throw new RuntimeException(e);
                 }
             }
-            System.out.println("El servidor no responde");
+            controlador.mostrarModalError("El servidor no responde, se cerrará la sesión actual");
+            cerrarSesion();
+        }).start();
+
+        new Thread(() -> {
+            while (serverOnline) {
+                try {
+                    Thread.sleep(20000);
+                    synchronized (pendingPings) {
+                        failedPings = 0;
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }).start();
     }
 }
