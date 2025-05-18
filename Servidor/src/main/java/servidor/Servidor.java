@@ -18,7 +18,7 @@ public class Servidor {
     private final Map<String, Queue<Mensaje>> colaMensajes = new ConcurrentHashMap<>();
     private int intervaloPing = 5000;
     private boolean recibioEcho;
-
+    private volatile boolean monitoreo = false;
     private final int puertoPrincipal = 6000;
     private final int puertoSecundario = 6001;
 
@@ -26,6 +26,7 @@ public class Servidor {
         if (noExistePrincipal()) {
             start();
         } else {
+            this.monitoreo = true;
             iniciarMonitoreo();
         }
     }
@@ -140,96 +141,125 @@ public class Servidor {
         try {
             ServerSocket socket = new ServerSocket(puertoSecundario);
             escuchar(socket);
-            monitorear();
+            monitorear(socket);
         } catch (Exception e) {
+            e.printStackTrace();
             System.out.println("Problemitas");
         }
     }
 
     public void escuchar(ServerSocket serverSocket) {
-        System.out.println("Esuchando");
+        System.out.println("Escuchando");
+
         new Thread(() -> {
-            while (true) {
-                try {
-                    Socket socket = serverSocket.accept();
-                    new Thread(() -> {
-                        try {
-                            ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
-                            Object obj = inputStream.readObject();
-                            if (obj instanceof Respuesta respuesta) {
-                                switch (respuesta.getTipo()) {
-                                    case Respuesta.ECHO -> {
-                                        setRecibioEcho(true);
+            try {
+                while (this.monitoreo) {
+                    System.out.println("Esperando conexiones... monitoreo=" + this.monitoreo);
+
+                    try {
+                        Socket socket = serverSocket.accept();
+                        new Thread(() -> {
+                            try {
+                                ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+                                Object obj = inputStream.readObject();
+
+                                if (obj instanceof Respuesta respuesta) {
+                                    switch (respuesta.getTipo()) {
+                                        case Respuesta.ECHO -> setRecibioEcho(true);
+
+                                        case Respuesta.LOGIN -> {
+                                            String usuario = (String) respuesta.getDatos().get("usuario");
+                                            String ip = (String) respuesta.getDatos().get("ip");
+                                            int puerto = (int) respuesta.getDatos().get("puerto");
+                                            agregarDirectorio(usuario, new UsuarioServidor(usuario, ip, puerto));
+                                        }
+
+                                        case Respuesta.LOGOUT -> {
+                                            String usuario = (String) respuesta.getDatos().get("usuario");
+                                            directorio.get(usuario).setConectado(false);
+                                        }
+
+                                        case Respuesta.MENSAJES_OFFLINE -> {
+                                            String usuario = (String) respuesta.getDatos().get("usuario");
+                                            colaMensajes.remove(usuario);
+                                        }
+
+                                        default -> System.out.println("Solicitud desconocida");
                                     }
-                                    case Respuesta.LOGIN -> {
-                                        String usuario = (String) respuesta.getDatos().get("usuario");
-                                        String ip = (String) respuesta.getDatos().get("ip");
-                                        int puerto = (int) respuesta.getDatos().get("puerto");
-                                        agregarDirectorio(usuario, new UsuarioServidor(usuario, ip, puerto));
-                                    }
-                                    case Respuesta.LOGOUT -> {
-                                        String usuario = (String) respuesta.getDatos().get("usuario");
-                                        directorio.get(usuario).setConectado(false);
-                                    }
-                                    case Respuesta.MENSAJES_OFFLINE -> {
-                                        String usuario = (String) respuesta.getDatos().get("usuario");
-                                        colaMensajes.remove(usuario);
-                                    }
-                                    default -> System.out.println("Solicitud desconocida");
+                                }
+
+                            } catch (Exception e) {
+                                System.out.println("Error procesando solicitud:");
+                                e.printStackTrace();
+                            } finally {
+                                try {
+                                    socket.close();
+                                } catch (IOException e) {
+                                    System.out.println("Error cerrando socket:");
+                                    e.printStackTrace();
                                 }
                             }
-                        } catch (Exception e) {
-                            System.out.println("Problemitas escuchar");
-                        }
-                    }).start();
-                } catch (Exception e) {
-                    System.out.println("Problemitas2");
+                        }).start();
+                    } catch (SocketException se) {
+                        System.out.println("Socket cerrado, terminando escucha.");
+                        break;
+                    } catch (Exception e) {
+                        System.out.println("Error aceptando conexión:");
+                        e.printStackTrace();
+                    }
                 }
-                System.out.println("SISTEMA SECUNDARIO");
-                System.out.println("Directorio = " + directorio);
-                System.out.println("Cola de mensajes = " + colaMensajes);
+            } finally {
+                System.out.println("Fin monitoreo de conexiones.");
             }
         }).start();
     }
 
-    public void monitorear() {
+    public void monitorear(ServerSocket serverSocket) {
         new Thread(() -> {
-            System.out.println("Inicio monitoreo");
-            while (true) {
+            while (this.monitoreo) {
                 try {
                     recibioEcho = false;
                     // Enviar Ping
                     new Thread(() -> {
                         try (Socket socketPrincipal = new Socket(InetAddress.getLocalHost().getHostAddress(), puertoPrincipal)) {
+                            HashMap<String, Object> datos = new HashMap<>();
+                            datos.put("origen", "backup");
                             Solicitud ping = new Solicitud(Solicitud.PING);
                             ObjectOutputStream outputStream = new ObjectOutputStream(socketPrincipal.getOutputStream());
                             outputStream.writeObject(ping);
                             outputStream.flush();
                         } catch (IOException e) {
                             System.out.println("Failed to send ping");
+                            e.printStackTrace();
                         }
                     }).start();
 
                     Thread.sleep(intervaloPing);
                 } catch (Exception e) {
+
                 }
                 if (!recibioEcho) {
-                    System.out.println("No recibi eco");
-                    break; // Empieza a actuar como primario
+                    try {
+                        iniciarBackUp(serverSocket);
+                    } catch (IOException e) {
+                        System.out.println("No se pudo levantar el servidor de backup");
+                        e.printStackTrace();
+                    }
+                    break;
                 }
             }
         }).start();
-        iniciarBackUp();
     }
-
 
     public void setRecibioEcho(boolean b) {
         this.recibioEcho = b;
     }
 
-
-    public void iniciarBackUp() {
-        System.out.println("Inicio backup");
+    //Marca el monitoreo en false, cierra el socket de escucha y pone al servidor como principal
+    public void iniciarBackUp(ServerSocket serverSocket) throws IOException {
+        this.monitoreo = false;
+        serverSocket.close();
+        start();
     }
 
 }

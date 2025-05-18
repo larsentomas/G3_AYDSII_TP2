@@ -18,6 +18,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Sistema {
 
@@ -27,15 +30,13 @@ public class Sistema {
 
     private static Sistema instance = null;
     private static UsuarioLogueado usuarioLogueado = null;
+    private volatile boolean serverOnline = false;
 
     static VistaInicio vistaInicio = new VistaInicio();
     static VistaLogin vistaLogin = new VistaLogin();
 
     static Controlador controlador;
     static ControladorLogin controladorLogin;
-
-    private HashMap<Solicitud, int> esperando;
-    private int intentos = 0;
 
 
     public static void main(String[] args) {
@@ -60,17 +61,11 @@ public class Sistema {
         // Constructor privado para evitar instanciación externa
 
         // Abrir y leer el archivo de configuracion
-        try {
-            //ipServidor = InetAddress.getLocalHost().getHostAddress();
-            ipServidor = Config.get("servidor.ip");
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        //ipServidor = InetAddress.getLocalHost().getHostAddress();
+        ipServidor = Config.get("servidor.ip");
         //puertoServidor = 6000;
         puertoServidor = Config.getInt("servidor.puerto");
-
-        esperando = new HashMap<Solicitud, int>();
-
+        selfTest(ipServidor, puertoServidor);
     }
 
     public static Sistema getInstance() {
@@ -101,7 +96,6 @@ public class Sistema {
         Solicitud sol = new Solicitud(Solicitud.NUEVA_CONVERSACION, Map.of("usuario", usuarioLogueado.getNombre(), "usuarioConversacion", usuario));
         try {
             new Thread(new Comunicador(sol, puertoServidor, ipServidor)).start();
-            esperando.put(sol, 1);
             System.out.println("A la espera de confirmacion");
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -114,7 +108,6 @@ public class Sistema {
     public void enviarMensaje(String contenido, Conversacion conversacion) throws IOException {
         Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", new Mensaje(contenido, usuarioLogueado.getNombre()), "receptor", conversacion.getIntegrante()));
         new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
-        esperando.put(solicitud, 1);
         System.out.println("A la espera de confirmacion");
     }
 
@@ -252,7 +245,6 @@ public class Sistema {
             // Enviar solicitud al servidor para obtener la lista de posibles contactos
             Solicitud s = new Solicitud(Solicitud.DIRECTORIO, Sistema.getInstance().getUsuarioLogueado().getNombre());
             new Thread(new Comunicador(s, puertoServidor, ipServidor)).start();
-            esperando.put(s, 1);
             System.out.println("A la espera de confirmacion");
         }
     }
@@ -311,8 +303,7 @@ public class Sistema {
             // Iniciar el hilo para enviar mensajes
             Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
             new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
-            esperando = solicitud;
-            intentos = 1;
+
             System.out.println("A la espera de confirmacion");
 
         } catch (IOException e) {
@@ -330,6 +321,32 @@ public class Sistema {
         } catch (IOException e) {
             controladorLogin.mostrarModalError("Error al cerrar la sesión.");
         }
+    }
+
+    //SELF-TEST
+
+    private void selfTest(String ip, int puerto) {
+        ScheduledExecutorService pingScheduler = Executors.newSingleThreadScheduledExecutor();
+
+        pingScheduler.scheduleAtFixedRate(() -> {
+            try {
+                Socket socket = new Socket(ip, puerto);
+                ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+
+                Map<String, Object> datos = new HashMap<>();
+                datos.put("origin", "client");
+                Solicitud ping = new Solicitud(Solicitud.PING, datos);
+
+                synchronized (out) {
+                    out.writeObject(ping);
+                    out.flush();
+                }
+                System.out.println("Ping sent");
+
+            } catch (IOException e) {
+                System.err.println("Ping failed: " + e.getMessage());
+            }
+        }, 0, 5, TimeUnit.SECONDS);
     }
 
 }

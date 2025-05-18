@@ -39,14 +39,9 @@ public class VistaInicio extends JFrame implements IVistaInicio {
     // Paleta Chatty
     private final Color AZUL_OSCURO = new Color(5, 10, 42);
     private final Color ROSA = new Color(255, 118, 123);
-    private final Color GRIS_CLARO = new Color(240, 240, 240);
+    private final Color GRIS_CLARO = new Color(220, 220, 220);
     private final Color BLANCO = Color.WHITE;
-    
- // Paleta Dark Mode Chatty
-    private final Color NEGRO = new Color(18, 18, 18);
-    private final Color GRIS_OSCURO = new Color(48, 48, 48);
-    private final Color BLANCO_GRISACEO = new Color(220, 220, 220);
-    private final Color AZUL_CLARO = new Color(100, 149, 237);
+
 
     public VistaInicio() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
