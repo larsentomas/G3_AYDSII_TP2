@@ -29,7 +29,6 @@ public class Sistema {
     private static Sistema instance = null;
     private static UsuarioLogueado usuarioLogueado = null;
 
-
     static VistaInicio vistaInicio = new VistaInicio();
     static VistaLogin vistaLogin = new VistaLogin();
 
@@ -37,7 +36,7 @@ public class Sistema {
     static ControladorLogin controladorLogin;
 
     private final Map<Integer, Long> pendingPings = new ConcurrentHashMap<>();
-    private volatile boolean serverOnline = false;
+    private volatile boolean serverOnline = true;
 
     public static void main(String[] args) {
         instance = Sistema.getInstance();
@@ -65,7 +64,7 @@ public class Sistema {
         ipServidor = Config.get("servidor.ip");
         //puertoServidor = 6000;
         puertoServidor = Config.getInt("servidor.puerto");
-        selfTest(ipServidor, puertoServidor);
+
     }
 
     public static Sistema getInstance() {
@@ -305,6 +304,8 @@ public class Sistema {
             if (!servidorActivo(ipServidor, puertoServidor)) {
                 controladorLogin.mostrarModalError("No se pudo conectar al servidor");
                 return;
+            }else{
+                selfTest(ipServidor, puertoServidor, usuarioLogueado);
             }
             // Iniciar el hilo para enviar mensajes
             Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
@@ -331,12 +332,16 @@ public class Sistema {
 
     //SELF-TEST
 
-    private void selfTest(String ip, int puerto) {
+    private void selfTest(String ip, int puerto, UsuarioLogueado usuarioLogueado) {
         new Thread(() -> {
             while (serverOnline) {
                 try {
-
-                    Solicitud ping = new Solicitud(Solicitud.PING, Map.of("origen", "cliente"));
+                    HashMap datos = new HashMap<>();
+                    datos.put("usuario", usuarioLogueado.getNombre());
+                    datos.put("ipCliente", InetAddress.getLocalHost().getHostAddress());
+                    datos.put("puertoCliente", usuarioLogueado.getPuerto());
+                    datos.put("origen", "cliente");
+                    Solicitud ping = new Solicitud(Solicitud.PING, datos);
 
                     synchronized (pendingPings) {
                         pendingPings.put(ping.getId(), System.currentTimeMillis());
@@ -344,18 +349,21 @@ public class Sistema {
 
                     new Thread(new Comunicador(ping, puerto, ip)).start();
 
-                    Thread.sleep(3000); // Wait before next ping
+                    Thread.sleep(3000);
 
-                    // Check timeout
                     synchronized (pendingPings) {
                         Iterator<Map.Entry<Integer, Long>> it = pendingPings.entrySet().iterator();
+                        int failedPings = 0; // Counter for failed pings
                         while (it.hasNext()) {
                             Map.Entry<Integer, Long> entry = it.next();
-                            if (System.currentTimeMillis() - entry.getValue() > 8000) { // 5s timeout
-                                System.err.println("Ping timeout!");
-                                serverOnline = false;
+                            if (System.currentTimeMillis() - entry.getValue() > 5000) {
+                                System.err.println("Ping fallido");
+                                failedPings++;
                                 it.remove();
                             }
+                        }
+                        if (failedPings >= 3) {
+                            serverOnline = false;
                         }
                     }
                 } catch (InterruptedException e) {
@@ -367,5 +375,4 @@ public class Sistema {
             System.out.println("El servidor no responde");
         }).start();
     }
-
 }

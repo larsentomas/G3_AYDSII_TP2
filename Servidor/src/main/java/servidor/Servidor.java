@@ -59,7 +59,6 @@ public class Servidor {
             }
         } catch (IOException e) {
             System.err.println("Error en el servidor: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -143,7 +142,6 @@ public class Servidor {
             escuchar(socket);
             monitorear(socket);
         } catch (Exception e) {
-            e.printStackTrace();
             System.out.println("Problemitas");
         }
     }
@@ -190,13 +188,11 @@ public class Servidor {
 
                             } catch (Exception e) {
                                 System.out.println("Error procesando solicitud:");
-                                e.printStackTrace();
                             } finally {
                                 try {
                                     socket.close();
                                 } catch (IOException e) {
                                     System.out.println("Error cerrando socket:");
-                                    e.printStackTrace();
                                 }
                             }
                         }).start();
@@ -205,7 +201,6 @@ public class Servidor {
                         break;
                     } catch (Exception e) {
                         System.out.println("Error aceptando conexión:");
-                        e.printStackTrace();
                     }
                 }
             } finally {
@@ -224,13 +219,12 @@ public class Servidor {
                         try (Socket socketPrincipal = new Socket(InetAddress.getLocalHost().getHostAddress(), puertoPrincipal)) {
                             HashMap<String, Object> datos = new HashMap<>();
                             datos.put("origen", "backup");
-                            Solicitud ping = new Solicitud(Solicitud.PING);
+                            Solicitud ping = new Solicitud(Solicitud.PING, datos);
                             ObjectOutputStream outputStream = new ObjectOutputStream(socketPrincipal.getOutputStream());
                             outputStream.writeObject(ping);
                             outputStream.flush();
                         } catch (IOException e) {
-                            System.out.println("Failed to send ping");
-                            e.printStackTrace();
+                            System.out.println("Error al enviar el ping");
                         }
                     }).start();
 
@@ -243,7 +237,6 @@ public class Servidor {
                         iniciarBackUp(serverSocket);
                     } catch (IOException e) {
                         System.out.println("No se pudo levantar el servidor de backup");
-                        e.printStackTrace();
                     }
                     break;
                 }

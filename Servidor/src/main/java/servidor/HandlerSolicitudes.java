@@ -170,10 +170,11 @@ public class HandlerSolicitudes implements Runnable {
 
     public void handlePing(Solicitud request) {
         String origen = (String) request.getDatos().get("origen");
+        System.out.println("Ping recibido de " + origen);
         if("backup".equalsIgnoreCase(origen)){
             actualizarSecundario(Respuesta.ECHO, Map.of());
         }else{
-            String usuario = request.getDatos().get("usuario").toString();
+            String usuario = (String) request.getDatos().get("usuario");
             enviarRespuestaCliente(usuario, Respuesta.ECHO, Map.of("id", request.getId()), false, null);
         }
     }
