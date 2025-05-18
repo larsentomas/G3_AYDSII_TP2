@@ -14,10 +14,8 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +28,7 @@ public class Sistema {
 
     private static Sistema instance = null;
     private static UsuarioLogueado usuarioLogueado = null;
-    private volatile boolean serverOnline = false;
+
 
     static VistaInicio vistaInicio = new VistaInicio();
     static VistaLogin vistaLogin = new VistaLogin();
@@ -38,6 +36,8 @@ public class Sistema {
     static Controlador controlador;
     static ControladorLogin controladorLogin;
 
+    private final Map<Integer, Long> pendingPings = new ConcurrentHashMap<>();
+    private volatile boolean serverOnline = false;
 
     public static void main(String[] args) {
         instance = Sistema.getInstance();
@@ -177,6 +177,12 @@ public class Sistema {
                     }
                     usuarioLogueado.crearConversacion(usuarioConversacion);
                     controlador.actualizarListaConversaciones();
+                }
+                case Respuesta.ECHO -> {
+                    int requestId = (int) respuesta.getDatos().get("id");
+                    synchronized (pendingPings) {
+                        pendingPings.remove(requestId);
+                    }
                 }
                 case Respuesta.MENSAJES_OFFLINE -> recibirMensajesOffline(respuesta);
             }
@@ -326,27 +332,40 @@ public class Sistema {
     //SELF-TEST
 
     private void selfTest(String ip, int puerto) {
-        ScheduledExecutorService pingScheduler = Executors.newSingleThreadScheduledExecutor();
+        new Thread(() -> {
+            while (serverOnline) {
+                try {
 
-        pingScheduler.scheduleAtFixedRate(() -> {
-            try {
-                Socket socket = new Socket(ip, puerto);
-                ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+                    Solicitud ping = new Solicitud(Solicitud.PING, Map.of("origen", "cliente"));
 
-                Map<String, Object> datos = new HashMap<>();
-                datos.put("origin", "client");
-                Solicitud ping = new Solicitud(Solicitud.PING, datos);
+                    synchronized (pendingPings) {
+                        pendingPings.put(ping.getId(), System.currentTimeMillis());
+                    }
 
-                synchronized (out) {
-                    out.writeObject(ping);
-                    out.flush();
+                    new Thread(new Comunicador(ping, puerto, ip)).start();
+
+                    Thread.sleep(3000); // Wait before next ping
+
+                    // Check timeout
+                    synchronized (pendingPings) {
+                        Iterator<Map.Entry<Integer, Long>> it = pendingPings.entrySet().iterator();
+                        while (it.hasNext()) {
+                            Map.Entry<Integer, Long> entry = it.next();
+                            if (System.currentTimeMillis() - entry.getValue() > 8000) { // 5s timeout
+                                System.err.println("Ping timeout!");
+                                serverOnline = false;
+                                it.remove();
+                            }
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-                System.out.println("Ping sent");
-
-            } catch (IOException e) {
-                System.err.println("Ping failed: " + e.getMessage());
             }
-        }, 0, 5, TimeUnit.SECONDS);
+            System.out.println("El servidor no responde");
+        }).start();
     }
 
 }

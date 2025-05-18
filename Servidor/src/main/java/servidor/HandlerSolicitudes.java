@@ -174,7 +174,7 @@ public class HandlerSolicitudes implements Runnable {
             actualizarSecundario(Respuesta.ECHO, Map.of());
         }else{
             String usuario = request.getDatos().get("usuario").toString();
-            enviarRespuestaCliente(usuario, Respuesta.ECHO, Map.of("solicitud", request.getId()), false, null);
+            enviarRespuestaCliente(usuario, Respuesta.ECHO, Map.of("id", request.getId()), false, null);
         }
     }
 
