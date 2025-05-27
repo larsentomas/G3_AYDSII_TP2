@@ -16,6 +16,8 @@ public class Mensaje implements Serializable {
         this.timestampCreado = new Timestamp(System.currentTimeMillis());
     }
 
+    public Mensaje() {}
+
     public String getContenido() {
         return contenido;
     }

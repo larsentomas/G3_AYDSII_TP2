@@ -13,6 +13,9 @@ public class UsuarioLogueado extends Usuario {
     private HashMap<String, String> contactos; // usuario, apodo
     private CopyOnWriteArrayList<Conversacion> conversaciones; // nombre : nickname nuestro
 
+    public UsuarioLogueado() {
+    }
+
     public UsuarioLogueado(String nickname, String ip, int puerto) {
         super(nickname, ip, puerto);
         this.contactos = new HashMap<>();
@@ -102,4 +105,14 @@ public class UsuarioLogueado extends Usuario {
         return conversaciones;
     }
 
+    // Extras para persistencia
+
+
+    public void setContactos(HashMap<String, String> contactos) {
+        this.contactos = contactos;
+    }
+
+    public void setConversaciones(CopyOnWriteArrayList<Conversacion> conversaciones) {
+        this.conversaciones = conversaciones;
+    }
 }

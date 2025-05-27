@@ -116,10 +116,13 @@ public class HandlerSolicitudes implements Runnable {
         }
 
         try {
-            if (servidor.logearCliente(name, ipCliente, puertoCliente))
+            if (servidor.logearCliente(name, ipCliente, puertoCliente)) {
                 actualizarSecundario(Respuesta.LOGIN, Map.of("usuario", name, "ip", ipCliente, "puerto", puertoCliente));
-            handleColaMensajes(name);
-            enviarRespuestaCliente(name, Respuesta.LOGIN, Map.of("solicitud", request.getId()), false, null);
+                handleColaMensajes(name);
+                enviarRespuestaCliente(name, Respuesta.LOGIN, Map.of("solicitud", request.getId()), false, null);
+            } else {
+                enviarRespuesta(ipCliente, puertoCliente, Respuesta.LOGIN, Map.of("solicitud", request.getId()), true, "Sesion ya existente");
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (UsuarioExistenteException e) {

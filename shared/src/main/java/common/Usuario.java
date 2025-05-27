@@ -15,6 +15,8 @@ public class Usuario implements Serializable {
         this.puerto = puerto;
     }
 
+    public Usuario() {}
+
     public String getNombre() {
         return nombre;
     }

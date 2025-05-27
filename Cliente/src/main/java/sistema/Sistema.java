@@ -6,6 +6,9 @@ import controlador.ControladorLogin;
 import excepciones.ContactoRepetidoException;
 import excepciones.PuertoInvalidoException;
 import modelo.*;
+import persistencia.Persistencia;
+import persistencia.PersistenciaJSON;
+import persistencia.PersistenciaXML;
 import vista.VistaInicio;
 import vista.VistaLogin;
 
@@ -22,6 +25,8 @@ public class Sistema {
     // Info del servidor
     private static int puertoServidor;
     private static String ipServidor;
+    private final String clave_encriptacion;
+    private int tipo_persistencia;
 
     private static Sistema instance = null;
     private static UsuarioLogueado usuarioLogueado = null;
@@ -33,8 +38,6 @@ public class Sistema {
     static ControladorLogin controladorLogin;
 
     private final Map<Integer, Long> pendingPings = new ConcurrentHashMap<>();
-    private volatile boolean serverOnline = true;
-    private volatile int failedPings = 0;
 
     public static void main(String[] args) {
         instance = Sistema.getInstance();
@@ -62,6 +65,10 @@ public class Sistema {
         ipServidor = Config.get("servidor.ip");
         //puertoServidor = 6000;
         puertoServidor = Config.getInt("servidor.puerto");
+        clave_encriptacion = Config.get("servidor.clave.encriptacion");
+
+        tipo_persistencia = Config.getInt("persistencia.tipo");
+        if (tipo_persistencia != 0 && tipo_persistencia != 1) tipo_persistencia = 0; // Por defecto JSON
 
     }
 
@@ -145,9 +152,21 @@ public class Sistema {
                         usuarioLogueado = null;
                         vistaLogin.mostrarModalError("El usuario ya existe.");
                     } else {
+
+                        // PERSISTENCIA
+                        Persistencia p;
+                        if (tipo_persistencia == 0) {
+                            p = new Persistencia(new PersistenciaJSON());
+                        } else {
+                            p = new Persistencia (new PersistenciaXML());
+                        }
+                        System.out.println("Persistiendo datos del usuario " + usuarioLogueado);
+                        p.cargar(usuarioLogueado);
+
                         controladorLogin.setVisible(false);
                         controlador.setVisible(true);
                         controlador.setBienvenida(usuarioLogueado.getNombre());
+                        controlador.actualizarListaConversaciones();
                     }
                 }
                 case Respuesta.ENVIAR_MENSAJE -> {
@@ -307,8 +326,6 @@ public class Sistema {
             Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
             new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
 
-            System.out.println("A la espera de confirmacion");
-
         } catch (IOException e) {
             usuarioLogueado = null;
             controladorLogin.mostrarModalError("Error al obtener la dirección IP local.");
@@ -318,10 +335,18 @@ public class Sistema {
     public static void cerrarSesion() {
         try {
             new Thread(new Comunicador(new Solicitud(Solicitud.LOGOUT, Sistema.getInstance().getUsuarioLogueado().getNombre()), puertoServidor, ipServidor)).start();
-            usuarioLogueado = null;
             controlador.setVisible(false);
+
+            // Persistencia
+            Persistencia p;
+            if (Sistema.getInstance().tipo_persistencia == 0) {
+                p = new Persistencia(new PersistenciaJSON());
+            } else {
+                p = new Persistencia(new PersistenciaXML());
+            }
+            p.persistir(usuarioLogueado);
+
             System.exit(1);
-           // controladorLogin.setVisible(true);
         } catch (IOException e) {
             controladorLogin.mostrarModalError("Error al cerrar la sesión.");
         }

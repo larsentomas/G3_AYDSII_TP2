@@ -17,6 +17,8 @@ public class Conversacion implements Serializable {
         this.mensajes = new ArrayList<>();
     }
 
+    public Conversacion() {}
+
     public void agregarMensaje(Mensaje mensaje) {
         System.out.println("Agregando mensaje " + mensaje);
         this.setNotificado(true);
@@ -45,6 +47,10 @@ public class Conversacion implements Serializable {
 
     public void setNotificado(boolean notificado) {
         this.notificado = notificado;
+    }
+
+    public void ponerMensaje(Mensaje mensaje) {
+        this.mensajes.add(mensaje);
     }
 
     @Override
