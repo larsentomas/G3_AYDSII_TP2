@@ -302,8 +302,6 @@ public class Sistema {
             if (!servidorActivo(ipServidor, puertoServidor)) {
                 controladorLogin.mostrarModalError("No se pudo conectar al servidor");
                 return;
-            }else{
-                selfTest(ipServidor, puertoServidor, usuarioLogueado);
             }
             // Iniciar el hilo para enviar mensajes
             Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
@@ -322,67 +320,10 @@ public class Sistema {
             new Thread(new Comunicador(new Solicitud(Solicitud.LOGOUT, Sistema.getInstance().getUsuarioLogueado().getNombre()), puertoServidor, ipServidor)).start();
             usuarioLogueado = null;
             controlador.setVisible(false);
+            System.exit(1);
            // controladorLogin.setVisible(true);
         } catch (IOException e) {
             controladorLogin.mostrarModalError("Error al cerrar la sesión.");
         }
-    }
-
-    //SELF-TEST
-
-    private void selfTest(String ip, int puerto, UsuarioLogueado usuarioLogueado) {
-        new Thread(() -> {
-            while (serverOnline) {
-                try {
-                    HashMap datos = new HashMap<>();
-                    datos.put("usuario", usuarioLogueado.getNombre());
-                    datos.put("ipCliente", InetAddress.getLocalHost().getHostAddress());
-                    datos.put("puertoCliente", usuarioLogueado.getPuerto());
-                    datos.put("origen", "cliente");
-                    Solicitud ping = new Solicitud(Solicitud.PING, datos);
-
-                    synchronized (pendingPings) {
-                        pendingPings.put(ping.getId(), System.currentTimeMillis());
-                    }
-
-                    new Thread(new Comunicador(ping, puerto, ip)).start();
-
-                    Thread.sleep(2000);
-
-                    synchronized (pendingPings) {
-                        Iterator<Map.Entry<Integer, Long>> it = pendingPings.entrySet().iterator();// Counter for failed pings
-                        while (it.hasNext() && failedPings < 3) {
-                            Map.Entry<Integer, Long> entry = it.next();
-                            if (System.currentTimeMillis() - entry.getValue() > 3000) {
-                                failedPings++;
-                                it.remove();
-                            }
-                        }
-                        if (failedPings >= 3) {
-                            serverOnline = false;
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            controlador.mostrarModalError("El servidor no responde, se cerrará la sesión actual");
-            cerrarSesion();
-        }).start();
-
-        new Thread(() -> {
-            while (serverOnline) {
-                try {
-                    Thread.sleep(20000);
-                    synchronized (pendingPings) {
-                        failedPings = 0;
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }).start();
     }
 }

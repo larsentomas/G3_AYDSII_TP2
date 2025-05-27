@@ -16,6 +16,7 @@ public class Solicitud implements Serializable {
     public final static String LOGOUT = "LOGOUT";
     public final static String ENVIAR_MENSAJE = "ENVIAR_MENSAJE";
     public final static String PING = "PING";
+    public final static String RESINCRONIZACION = "RESINCRONIZACION";
 
     private int id;
     private final String tipo;

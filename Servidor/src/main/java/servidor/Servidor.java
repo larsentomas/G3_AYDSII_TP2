@@ -23,7 +23,7 @@ public class Servidor {
     private final int puertoSecundario = 6001;
 
     public Servidor() {
-        if (noExistePrincipal()) {
+        if (noExisteServidor(puertoPrincipal)) {
             start();
         } else {
             this.monitoreo = true;
@@ -31,9 +31,9 @@ public class Servidor {
         }
     }
 
-    public boolean noExistePrincipal() {
+    public boolean noExisteServidor(int puerto) {
         try (ServerSocket serverSocket = new ServerSocket()) {
-            InetSocketAddress direccion = new InetSocketAddress(InetAddress.getLocalHost().getHostName(), puertoPrincipal);
+            InetSocketAddress direccion = new InetSocketAddress(InetAddress.getLocalHost().getHostName(), puerto);
             serverSocket.setReuseAddress(true);
             serverSocket.bind(direccion);
             return true;
@@ -50,7 +50,7 @@ public class Servidor {
         try {
             //Por ahora el servidor corre en la maquina local
             serverSocket = new ServerSocket(puertoPrincipal);
-            System.out.println("Servidor iniciado en el puerto " + puertoPrincipal);
+            System.out.println("Servidor PRINCIPAL iniciado");
 
             while (true) {
                 Socket socket = serverSocket.accept();
@@ -60,6 +60,10 @@ public class Servidor {
         } catch (IOException e) {
             System.err.println("Error en el servidor: " + e.getMessage());
         }
+    }
+
+    public Map<String, Queue<Mensaje>> getMensajesOffline() {
+        return colaMensajes;
     }
 
     public Queue<Mensaje> getMensajesOffline(String username) {
@@ -107,6 +111,10 @@ public class Servidor {
         directorio.remove(username);
     }
 
+    public HashMap<String, UsuarioServidor> getDirectorio() {
+        return directorio;
+    }
+
     public ArrayList<String> getDatosDirectorio() {
         return new ArrayList<>(directorio.keySet());
     }
@@ -138,12 +146,30 @@ public class Servidor {
     public void iniciarMonitoreo() {
 
         try {
+            System.out.println("Servidor SECUNDARIO iniciado");
             ServerSocket socket = new ServerSocket(puertoSecundario);
+
+            // RESINCRONIZACION
+            resincronizacion();
+
             escuchar(socket);
             monitorear(socket);
         } catch (Exception e) {
             System.out.println("Problemitas");
         }
+    }
+
+    public void resincronizacion() {
+        new Thread(() -> {
+            try (Socket socketPrincipal = new Socket(InetAddress.getLocalHost().getHostAddress(), puertoPrincipal)) {
+                    Solicitud aviso = new Solicitud(Solicitud.RESINCRONIZACION);
+                    ObjectOutputStream outputStream = new ObjectOutputStream(socketPrincipal.getOutputStream());
+                    outputStream.writeObject(aviso);
+                    outputStream.flush();
+                } catch (IOException e) {
+                    System.out.println("Error al solicitar resincronizacion al servidor principal");
+                }
+        }).start();
     }
 
     public void escuchar(ServerSocket serverSocket) {
@@ -152,7 +178,7 @@ public class Servidor {
         new Thread(() -> {
             try {
                 while (this.monitoreo) {
-                    System.out.println("Esperando conexiones... monitoreo=" + this.monitoreo);
+                    //System.out.println("Esperando conexiones... monitoreo=" + this.monitoreo);
 
                     try {
                         Socket socket = serverSocket.accept();
@@ -162,6 +188,7 @@ public class Servidor {
                                 Object obj = inputStream.readObject();
 
                                 if (obj instanceof Respuesta respuesta) {
+                                    if (!respuesta.getTipo().equals(Respuesta.ECHO)) System.out.println("Actualizacion tipo " + respuesta.getTipo());
                                     switch (respuesta.getTipo()) {
                                         case Respuesta.ECHO -> setRecibioEcho(true);
 
@@ -180,6 +207,15 @@ public class Servidor {
                                         case Respuesta.MENSAJES_OFFLINE -> {
                                             String usuario = (String) respuesta.getDatos().get("usuario");
                                             colaMensajes.remove(usuario);
+                                        }
+
+                                        case Respuesta.RESINCRONIZACION -> {
+                                            this.directorio = (HashMap<String, UsuarioServidor>) respuesta.getDatos().get("usuarios");
+                                            this.colaMensajes.clear();
+                                            this.colaMensajes.putAll((Map<String, Queue<Mensaje>>) respuesta.getDatos().get("mensajesOffline"));
+                                            System.out.println("-------------------- ESTADO DEL SISTEMA --------------------");
+                                            System.out.println("Directorio: " + directorio);
+                                            System.out.println("Mensajes Offline: " + colaMensajes);
                                         }
 
                                         default -> System.out.println("Solicitud desconocida");

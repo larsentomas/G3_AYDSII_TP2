@@ -36,6 +36,9 @@ public class HandlerSolicitudes implements Runnable {
         try {
             Object obj = inputStream.readObject();
             if (obj instanceof Solicitud request) {
+                if (!request.getTipo().equals(Solicitud.PING)) {
+                    System.out.println("Solicitud recibida: " + request.getTipo());
+                }
                 switch (request.getTipo()) {
                     case Solicitud.LOGIN -> {
                         handleLogin(request);
@@ -58,6 +61,10 @@ public class HandlerSolicitudes implements Runnable {
                     case Solicitud.PING -> {
                         handlePing(request);
                     }
+                    case Solicitud.RESINCRONIZACION -> {
+                        Map<String, Object> datos = Map.of("usuarios", servidor.getDirectorio(), "mensajesOffline", servidor.getMensajesOffline());
+                        enviarRespuesta(InetAddress.getLocalHost().getHostAddress(), servidor.getPuertoSecundario(), Respuesta.RESINCRONIZACION, datos, false, null);
+                    }
                     default -> enviarRespuesta(request.getDatos().get("ipCliente").toString(), (int) request.getDatos().get("puertoCliente"), "UNKNOWN_REQUEST", Map.of("solicitud", request), true, "No se reconoce la solicitud");
                 }
             }
@@ -69,6 +76,10 @@ public class HandlerSolicitudes implements Runnable {
 
     public void actualizarSecundario(String tipo, Map<String, Object> datos) {
         try {
+            if (servidor.noExisteServidor(servidor.getPuertoSecundario())) {
+                System.out.println("No hay servidor secundario activo, no se puede actualizar.");
+                return;
+            }
             enviarRespuesta(InetAddress.getLocalHost().getHostAddress(), servidor.getPuertoSecundario(), tipo, datos, false, null);
         } catch (UnknownHostException e) {
             System.out.println("Problemitas");
@@ -81,7 +92,7 @@ public class HandlerSolicitudes implements Runnable {
             ObjectOutputStream outputStream = new ObjectOutputStream(socketEnvio.getOutputStream());
             outputStream.writeObject(response);
             outputStream.flush();
-            System.out.println("Respuesta " + tipo + " enviada a " + ip + ":" + puerto);
+            //System.out.println("Respuesta " + tipo + " enviada a " + ip + ":" + puerto);
         } catch (IOException e) {
             System.out.println("Failed to send " + tipo + " to " + ip + ":" + puerto);
         }
@@ -170,7 +181,7 @@ public class HandlerSolicitudes implements Runnable {
 
     public void handlePing(Solicitud request) {
         String origen = (String) request.getDatos().get("origen");
-        System.out.println("Ping recibido de " + origen);
+        //System.out.println("Ping recibido de " + origen);
         if("backup".equalsIgnoreCase(origen)){
             actualizarSecundario(Respuesta.ECHO, Map.of());
         }else{
