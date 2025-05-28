@@ -28,4 +28,7 @@ public class Config {
     public static boolean getBoolean(String clave) {
         return Boolean.parseBoolean(get(clave));
     }
+    public static String getTipoEncriptacion() {
+        return props.getProperty("encriptacion.tipo", "Caesar"); // Valor por defecto
+    }
 }

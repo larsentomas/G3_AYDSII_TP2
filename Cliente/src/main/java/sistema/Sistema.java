@@ -3,10 +3,12 @@ package sistema;
 import common.*;
 import controlador.Controlador;
 import controlador.ControladorLogin;
+import encriptacion.CifradoCaesarClave;
+import encriptacion.ContextoEncriptacion;
+import encriptacion.EncriptarAES;
 import excepciones.ContactoRepetidoException;
 import excepciones.PuertoInvalidoException;
 import modelo.*;
-import persistencia.Persistencia;
 import persistencia.PersistenciaJSON;
 import persistencia.PersistenciaXML;
 import vista.VistaInicio;
@@ -61,9 +63,7 @@ public class Sistema {
         // Constructor privado para evitar instanciación externa
 
         // Abrir y leer el archivo de configuracion
-        //ipServidor = InetAddress.getLocalHost().getHostAddress();
         ipServidor = Config.get("servidor.ip");
-        //puertoServidor = 6000;
         puertoServidor = Config.getInt("servidor.puerto");
         clave_encriptacion = Config.get("servidor.clave.encriptacion");
 
@@ -98,21 +98,23 @@ public class Sistema {
         String usuario = usuarioLogueado.getContacto(apodo);
         Conversacion c = usuarioLogueado.crearConversacion(usuario);
         Solicitud sol = new Solicitud(Solicitud.NUEVA_CONVERSACION, Map.of("usuario", usuarioLogueado.getNombre(), "usuarioConversacion", usuario));
-        try {
-            new Thread(new Comunicador(sol, puertoServidor, ipServidor)).start();
-            System.out.println("A la espera de confirmacion");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        enviarAServidor(sol);
         return c;
     }
 
     // comunicacion con servidor
 
     public void enviarMensaje(String contenido, Conversacion conversacion) throws IOException {
-        Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", new Mensaje(contenido, usuarioLogueado.getNombre()), "receptor", conversacion.getIntegrante()));
-        new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
-        System.out.println("A la espera de confirmacion");
+        ContextoEncriptacion contexto = new ContextoEncriptacion();
+        String tipo = Config.get("persistencia.tipo");
+        if (tipo.equalsIgnoreCase("AES")) {
+            contexto.setEstrategia(new EncriptarAES());
+        } else if (tipo.equalsIgnoreCase("Caesar")) {
+            contexto.setEstrategia(new CifradoCaesarClave());
+        }
+        Mensaje mensajeEncriptado = contexto.encriptar(new Mensaje(contenido, usuarioLogueado.getNombre()), clave_encriptacion); // ACA LLAMA A LA FUNCION ENCRIPTAR
+        Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", mensajeEncriptado), "receptor", conversacion.getIntegrante());
+        enviarAServidor(solicitud);
     }
 
     public void recibirObj(Object obj) {
@@ -154,13 +156,12 @@ public class Sistema {
                     } else {
 
                         // PERSISTENCIA
-                        Persistencia p;
+                        TipoPersistencia p;
                         if (tipo_persistencia == 0) {
-                            p = new Persistencia(new PersistenciaJSON());
+                            p = new PersistenciaJSON();
                         } else {
-                            p = new Persistencia (new PersistenciaXML());
+                            p = new PersistenciaXML();
                         }
-                        System.out.println("Persistiendo datos del usuario " + usuarioLogueado);
                         p.cargar(usuarioLogueado);
 
                         controladorLogin.setVisible(false);
@@ -178,6 +179,17 @@ public class Sistema {
                         Mensaje mensaje = (Mensaje) respuesta.getDatos().get("mensaje");
                         String receptor = (String) respuesta.getDatos().get("receptor");
                         Conversacion c = usuarioLogueado.getConversacionCon(receptor);
+
+                        ContextoEncriptacion contexto = new ContextoEncriptacion();
+                        String tipo = Config.get("persistencia.tipo");
+                        if (tipo.equalsIgnoreCase("AES")) {
+                            contexto.setEstrategia(new EncriptarAES());
+                        } else if (tipo.equalsIgnoreCase("Caesar")) {
+                            contexto.setEstrategia(new CifradoCaesarClave());
+                        }
+
+
+                        Mensaje mensajeDesencriptado = contexto.desencriptar(mensaje, clave_encriptacion); // ACA DESENCRIPTA
                         usuarioLogueado.agregarMensajeaConversacion(mensaje, c);
                         controlador.actualizarPanelChat(c);
                     }
@@ -201,6 +213,7 @@ public class Sistema {
                     }
                 }
                 case Respuesta.MENSAJES_OFFLINE -> recibirMensajesOffline(respuesta);
+                case Respuesta.LOGOUT -> cerrarSesion();
             }
         }
     }
@@ -255,7 +268,16 @@ public class Sistema {
 
 
     public void agregarMensajeConversacion(Mensaje mensaje, Conversacion conversacion) {
-        usuarioLogueado.agregarMensajeaConversacion(mensaje, conversacion);
+        ContextoEncriptacion contexto = new ContextoEncriptacion();
+        String tipo = Config.get("persistencia.tipo");
+        if (tipo.equalsIgnoreCase("AES")) {
+            contexto.setEstrategia(new EncriptarAES());
+        } else if (tipo.equalsIgnoreCase("Caesar")) {
+            contexto.setEstrategia(new CifradoCaesarClave());
+        }
+
+
+        usuarioLogueado.agregarMensajeaConversacion(contexto.encriptar(mensaje, clave_encriptacion), conversacion); // ACA ENCRIPTA
 
         if (controlador.getConversacionActiva() == conversacion) {
             controlador.actualizarPanelChat(conversacion);
@@ -266,8 +288,7 @@ public class Sistema {
         if (usuarioLogueado != null) {
             // Enviar solicitud al servidor para obtener la lista de posibles contactos
             Solicitud s = new Solicitud(Solicitud.DIRECTORIO, Sistema.getInstance().getUsuarioLogueado().getNombre());
-            new Thread(new Comunicador(s, puertoServidor, ipServidor)).start();
-            System.out.println("A la espera de confirmacion");
+            enviarAServidor(s);
         }
     }
 
@@ -324,7 +345,7 @@ public class Sistema {
             }
             // Iniciar el hilo para enviar mensajes
             Solicitud solicitud = new Solicitud(Solicitud.LOGIN, Map.of("usuario", usuarioLogueado.getNombre(), "ipCliente", InetAddress.getLocalHost().getHostAddress(), "puertoCliente", Integer.parseInt(puerto)));
-            new Thread(new Comunicador(solicitud, puertoServidor, ipServidor)).start();
+            enviarAServidor(solicitud);
 
         } catch (IOException e) {
             usuarioLogueado = null;
@@ -334,21 +355,37 @@ public class Sistema {
 
     public static void cerrarSesion() {
         try {
-            new Thread(new Comunicador(new Solicitud(Solicitud.LOGOUT, Sistema.getInstance().getUsuarioLogueado().getNombre()), puertoServidor, ipServidor)).start();
+            enviarAServidor(new Solicitud(Solicitud.LOGOUT, Sistema.getInstance().getUsuarioLogueado().getNombre()));
             controlador.setVisible(false);
 
             // Persistencia
-            Persistencia p;
+            TipoPersistencia p;
             if (Sistema.getInstance().tipo_persistencia == 0) {
-                p = new Persistencia(new PersistenciaJSON());
+                p = new PersistenciaJSON();
             } else {
-                p = new Persistencia(new PersistenciaXML());
+                p = new PersistenciaXML();
             }
             p.persistir(usuarioLogueado);
 
             System.exit(1);
         } catch (IOException e) {
             controladorLogin.mostrarModalError("Error al cerrar la sesión.");
+        }
+    }
+
+    public void enviarAServidor(Solicitud s) {
+        Callable<Void> task = () -> {
+            new Comunicador(s, puertoServidor, ipServidor).run();
+            return null;
+        };
+        FutureTask<Void> future = new FutureTask<>(task);
+        new Thread(future).start();
+        try {
+            future.get(); // Esto lanzará la excepción si ocurre en el Comunicador
+            System.out.println("A la espera de confirmacion");
+        } catch (InterruptedException | ExecutionException e) {
+            controlador.mostrarModalError("El servidor no esta disponible. Cerrar sesion");
+            cerrarSesion();
         }
     }
 }
