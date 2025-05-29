@@ -9,8 +9,10 @@ import encriptacion.EncriptarAES;
 import excepciones.ContactoRepetidoException;
 import excepciones.PuertoInvalidoException;
 import modelo.*;
+import persistencia.FactoryPersistencia;
 import persistencia.PersistenciaJSON;
 import persistencia.PersistenciaXML;
+import persistencia.TipoPersistencia;
 import vista.VistaInicio;
 import vista.VistaLogin;
 
@@ -68,7 +70,6 @@ public class Sistema {
         clave_encriptacion = Config.get("servidor.clave.encriptacion");
 
         tipo_persistencia = Config.getInt("persistencia.tipo");
-        if (tipo_persistencia != 0 && tipo_persistencia != 1) tipo_persistencia = 0; // Por defecto JSON
 
     }
 
@@ -156,13 +157,7 @@ public class Sistema {
                     } else {
 
                         // PERSISTENCIA
-                        TipoPersistencia p;
-                        if (tipo_persistencia == 0) {
-                            p = new PersistenciaJSON();
-                        } else {
-                            p = new PersistenciaXML();
-                        }
-                        p.cargar(usuarioLogueado);
+                        TipoPersistencia p = FactoryPersistencia.crearPersistencia(tipo_persistencia);
 
                         controladorLogin.setVisible(false);
                         controlador.setVisible(true);
@@ -359,12 +354,7 @@ public class Sistema {
             controlador.setVisible(false);
 
             // Persistencia
-            TipoPersistencia p;
-            if (Sistema.getInstance().tipo_persistencia == 0) {
-                p = new PersistenciaJSON();
-            } else {
-                p = new PersistenciaXML();
-            }
+            TipoPersistencia p = FactoryPersistencia.crearPersistencia(getInstance().tipo_persistencia);
             p.persistir(usuarioLogueado);
 
             System.exit(1);
