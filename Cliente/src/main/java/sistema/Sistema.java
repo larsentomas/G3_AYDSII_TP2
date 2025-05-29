@@ -22,7 +22,10 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 public class Sistema {
 
@@ -114,7 +117,7 @@ public class Sistema {
             contexto.setEstrategia(new CifradoCaesarClave());
         }
         Mensaje mensajeEncriptado = contexto.encriptar(new Mensaje(contenido, usuarioLogueado.getNombre()), clave_encriptacion); // ACA LLAMA A LA FUNCION ENCRIPTAR
-        Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", mensajeEncriptado), "receptor", conversacion.getIntegrante());
+        Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", mensajeEncriptado, "receptor", conversacion.getIntegrante()));
         enviarAServidor(solicitud);
     }
 
@@ -358,12 +361,12 @@ public class Sistema {
             p.persistir(usuarioLogueado);
 
             System.exit(1);
-        } catch (IOException e) {
+        } catch (Exception e) {
             controladorLogin.mostrarModalError("Error al cerrar la sesión.");
         }
     }
 
-    public void enviarAServidor(Solicitud s) {
+    public static void enviarAServidor(Solicitud s) {
         Callable<Void> task = () -> {
             new Comunicador(s, puertoServidor, ipServidor).run();
             return null;
