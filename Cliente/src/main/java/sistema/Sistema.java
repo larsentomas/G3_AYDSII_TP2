@@ -46,6 +46,11 @@ public class Sistema {
 
     private final Map<Integer, Long> pendingPings = new ConcurrentHashMap<>();
 
+    private ContextoEncriptacion contexto = new ContextoEncriptacion();
+
+
+
+
     public static void main(String[] args) {
         instance = Sistema.getInstance();
 
@@ -70,7 +75,7 @@ public class Sistema {
         // Abrir y leer el archivo de configuracion
         ipServidor = Config.get("servidor.ip");
         puertoServidor = Config.getInt("servidor.puerto");
-        clave_encriptacion = Config.get("servidor.clave.encriptacion");
+        clave_encriptacion = Config.get("clave.encriptacion");
 
         tipo_persistencia = Config.getInt("persistencia.tipo");
 
@@ -109,14 +114,18 @@ public class Sistema {
     // comunicacion con servidor
 
     public void enviarMensaje(String contenido, Conversacion conversacion) throws IOException {
-        ContextoEncriptacion contexto = new ContextoEncriptacion();
-        String tipo = Config.get("persistencia.tipo");
-        if (tipo.equalsIgnoreCase("AES")) {
-            contexto.setEstrategia(new EncriptarAES());
-        } else if (tipo.equalsIgnoreCase("Caesar")) {
-            contexto.setEstrategia(new CifradoCaesarClave());
+        String tipoCifrado = Config.get("persistencia.tipo");
+        switch (tipoCifrado) {
+            case "0":
+                contexto.setEstrategia(new CifradoCaesarClave());
+                break;
+            case "1":
+                contexto.setEstrategia(new EncriptarAES());
+                break;
+            default:
+                throw new IllegalArgumentException("Tipo de cifrado inválido: " + tipoCifrado);
         }
-        Mensaje mensajeEncriptado = contexto.encriptar(new Mensaje(contenido, usuarioLogueado.getNombre()), clave_encriptacion); // ACA LLAMA A LA FUNCION ENCRIPTAR
+        Mensaje mensajeEncriptado = this.contexto.encriptar(new Mensaje(contenido, usuarioLogueado.getNombre()), clave_encriptacion); // ACA LLAMA A LA FUNCION ENCRIPTAR
         Solicitud solicitud = new Solicitud(Solicitud.ENVIAR_MENSAJE, Map.of("mensaje", mensajeEncriptado, "receptor", conversacion.getIntegrante()));
         enviarAServidor(solicitud);
     }
@@ -178,16 +187,18 @@ public class Sistema {
                         String receptor = (String) respuesta.getDatos().get("receptor");
                         Conversacion c = usuarioLogueado.getConversacionCon(receptor);
 
-                        ContextoEncriptacion contexto = new ContextoEncriptacion();
-                        String tipo = Config.get("persistencia.tipo");
-                        if (tipo.equalsIgnoreCase("AES")) {
-                            contexto.setEstrategia(new EncriptarAES());
-                        } else if (tipo.equalsIgnoreCase("Caesar")) {
-                            contexto.setEstrategia(new CifradoCaesarClave());
+                        String tipoCifrado = Config.get("persistencia.tipo");
+                        switch (tipoCifrado) {
+                            case "0":
+                                contexto.setEstrategia(new CifradoCaesarClave());
+                                break;
+                            case "1":
+                                contexto.setEstrategia(new EncriptarAES());
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Tipo de cifrado inválido: " + tipoCifrado);
                         }
-
-
-                        Mensaje mensajeDesencriptado = contexto.desencriptar(mensaje, clave_encriptacion); // ACA DESENCRIPTA
+                        mensaje = contexto.desencriptar(mensaje, clave_encriptacion); // ACA DESENCRIPTA
                         usuarioLogueado.agregarMensajeaConversacion(mensaje, c);
                         controlador.actualizarPanelChat(c);
                     }
@@ -266,16 +277,18 @@ public class Sistema {
 
 
     public void agregarMensajeConversacion(Mensaje mensaje, Conversacion conversacion) {
-        ContextoEncriptacion contexto = new ContextoEncriptacion();
-        String tipo = Config.get("persistencia.tipo");
-        if (tipo.equalsIgnoreCase("AES")) {
-            contexto.setEstrategia(new EncriptarAES());
-        } else if (tipo.equalsIgnoreCase("Caesar")) {
-            contexto.setEstrategia(new CifradoCaesarClave());
+        String tipoCifrado = Config.get("persistencia.tipo");
+        switch (tipoCifrado) {
+            case "0":
+                contexto.setEstrategia(new CifradoCaesarClave());
+                break;
+            case "1":
+                contexto.setEstrategia(new EncriptarAES());
+                break;
+            default:
+                throw new IllegalArgumentException("Tipo de cifrado inválido: " + tipoCifrado);
         }
-
-
-        usuarioLogueado.agregarMensajeaConversacion(contexto.encriptar(mensaje, clave_encriptacion), conversacion); // ACA ENCRIPTA
+        usuarioLogueado.agregarMensajeaConversacion(contexto.desencriptar(mensaje, clave_encriptacion), conversacion); // ACA ENCRIPTA
 
         if (controlador.getConversacionActiva() == conversacion) {
             controlador.actualizarPanelChat(conversacion);

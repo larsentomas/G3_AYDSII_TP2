@@ -1,28 +1,33 @@
 package encriptacion;
+
 import common.Mensaje;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 
 public class EncriptarAES implements Strategy {
 
     private static final String ALGORITMO = "AES";
 
+    @Override
     public Mensaje encriptar(Mensaje mensaje, String claveEncriptacion) {
         try {
             SecretKeySpec key = generarClave(claveEncriptacion);
             Cipher cipher = Cipher.getInstance(ALGORITMO);
             cipher.init(Cipher.ENCRYPT_MODE, key);
 
-            byte[] textoEncriptado = cipher.doFinal(mensaje.getContenido().getBytes());
+            byte[] textoEncriptado = cipher.doFinal(mensaje.getContenido().getBytes(StandardCharsets.UTF_8));
             String textoBase64 = Base64.getEncoder().encodeToString(textoEncriptado);
-            mensaje.setContenido(textoBase64);
+
+            return new Mensaje(textoBase64, mensaje.getEmisor());
         } catch (Exception e) {
             e.printStackTrace();
+            return mensaje;
         }
-        return mensaje;
     }
 
+    @Override
     public Mensaje desencriptar(Mensaje mensaje, String claveEncriptacion) {
         try {
             SecretKeySpec key = generarClave(claveEncriptacion);
@@ -31,17 +36,19 @@ public class EncriptarAES implements Strategy {
 
             byte[] bytesEncriptados = Base64.getDecoder().decode(mensaje.getContenido());
             byte[] textoDesencriptado = cipher.doFinal(bytesEncriptados);
-            mensaje.setContenido(new String(textoDesencriptado));
+            String contenido = new String(textoDesencriptado, StandardCharsets.UTF_8);
+
+            return new Mensaje(contenido, mensaje.getEmisor());
         } catch (Exception e) {
             e.printStackTrace();
+            return mensaje;
         }
-        return mensaje;
     }
 
-    private SecretKeySpec generarClave(String clave) throws Exception {
-        // Reducción de clave a 16 bytes (128 bits)
+    private SecretKeySpec generarClave(String clave) {
+        // Asegura una clave de 16 bytes para AES-128
         byte[] claveBytes = new byte[16];
-        byte[] claveOriginal = clave.getBytes("UTF-8");
+        byte[] claveOriginal = clave.getBytes(StandardCharsets.UTF_8);
 
         for (int i = 0; i < claveOriginal.length && i < claveBytes.length; i++) {
             claveBytes[i] = claveOriginal[i];
@@ -50,4 +57,3 @@ public class EncriptarAES implements Strategy {
         return new SecretKeySpec(claveBytes, ALGORITMO);
     }
 }
-
