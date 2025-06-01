@@ -410,7 +410,8 @@ public class Sistema {
             System.out.println("A la espera de confirmacion");
         } catch (InterruptedException | ExecutionException e) {
             controlador.mostrarModalError("El servidor no esta disponible. Cerrar sesion");
-            cerrarSesion();
+            controlador.setVisible(false);
+            System.exit(1);
         }
     }
 }
