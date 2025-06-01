@@ -33,7 +33,9 @@ public class Sistema {
     private static int puertoServidor;
     private static String ipServidor;
     private final String clave_encriptacion;
-    private int tipo_persistencia;
+    private final int tipo_persistencia;
+
+    private String tipoCifrado;
 
     private static Sistema instance = null;
     private static UsuarioLogueado usuarioLogueado = null;
@@ -76,8 +78,8 @@ public class Sistema {
         ipServidor = Config.get("servidor.ip");
         puertoServidor = Config.getInt("servidor.puerto");
         clave_encriptacion = Config.get("clave.encriptacion");
-
         tipo_persistencia = Config.getInt("persistencia.tipo");
+        tipoCifrado = Config.get("encriptacion.tipo");
 
     }
 
@@ -114,7 +116,7 @@ public class Sistema {
     // comunicacion con servidor
 
     public void enviarMensaje(String contenido, Conversacion conversacion) throws IOException {
-        String tipoCifrado = Config.get("persistencia.tipo");
+        String tipoCifrado = this.tipoCifrado;
         switch (tipoCifrado) {
             case "0":
                 contexto.setEstrategia(new CifradoCaesarClave());
@@ -170,7 +172,7 @@ public class Sistema {
 
                         // PERSISTENCIA
                         TipoPersistencia p = FactoryPersistencia.crearPersistencia(tipo_persistencia);
-
+                        p.cargar(usuarioLogueado);
                         controladorLogin.setVisible(false);
                         controlador.setVisible(true);
                         controlador.setBienvenida(usuarioLogueado.getNombre());
@@ -187,8 +189,7 @@ public class Sistema {
                         String receptor = (String) respuesta.getDatos().get("receptor");
                         Conversacion c = usuarioLogueado.getConversacionCon(receptor);
 
-                        String tipoCifrado = Config.get("persistencia.tipo");
-                        switch (tipoCifrado) {
+                        switch (this.tipoCifrado) {
                             case "0":
                                 contexto.setEstrategia(new CifradoCaesarClave());
                                 break;
@@ -198,7 +199,7 @@ public class Sistema {
                             default:
                                 throw new IllegalArgumentException("Tipo de cifrado inválido: " + tipoCifrado);
                         }
-                        mensaje = contexto.desencriptar(mensaje, clave_encriptacion); // ACA DESENCRIPTA
+                        mensaje = contexto.desencriptar(mensaje, this.clave_encriptacion); // ACA DESENCRIPTA
                         usuarioLogueado.agregarMensajeaConversacion(mensaje, c);
                         controlador.actualizarPanelChat(c);
                     }
@@ -237,6 +238,17 @@ public class Sistema {
                 usuarioLogueado.agregarContacto(usuario, usuario);
                 Conversacion conversacion = usuarioLogueado.crearConversacion(usuario);
                 for (Mensaje mensaje : mensajes) {
+                    switch (this.tipoCifrado) {
+                        case "0":
+                            contexto.setEstrategia(new CifradoCaesarClave());
+                            break;
+                        case "1":
+                            contexto.setEstrategia(new EncriptarAES());
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Tipo de cifrado inválido: " + tipoCifrado);
+                    }
+                    mensaje = contexto.desencriptar(mensaje, this.clave_encriptacion);
                     usuarioLogueado.agregarMensajeaConversacion(mensaje, conversacion);
                 }
             } catch (ContactoRepetidoException e) {
@@ -277,7 +289,7 @@ public class Sistema {
 
 
     public void agregarMensajeConversacion(Mensaje mensaje, Conversacion conversacion) {
-        String tipoCifrado = Config.get("persistencia.tipo");
+        String tipoCifrado = this.tipoCifrado;
         switch (tipoCifrado) {
             case "0":
                 contexto.setEstrategia(new CifradoCaesarClave());
