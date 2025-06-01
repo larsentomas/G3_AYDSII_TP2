@@ -235,8 +235,15 @@ public class Sistema {
             String usuario = entry.getKey();
             ArrayList<Mensaje> mensajes = (ArrayList<Mensaje>) entry.getValue();
             try {
-                usuarioLogueado.agregarContacto(usuario, usuario);
-                Conversacion conversacion = usuarioLogueado.crearConversacion(usuario);
+                Conversacion conversacion;
+                if (!usuarioLogueado.getContactos().containsKey(usuario)) {
+                    usuarioLogueado.agregarContacto(usuario, usuario);
+                    conversacion = usuarioLogueado.crearConversacion(usuario);
+                } else if (usuarioLogueado.getConversacionCon(usuario) == null) {
+                    conversacion = usuarioLogueado.crearConversacion(usuario);
+                } else {
+                    conversacion = usuarioLogueado.getConversacionCon(usuario);
+                }
                 for (Mensaje mensaje : mensajes) {
                     switch (this.tipoCifrado) {
                         case "0":

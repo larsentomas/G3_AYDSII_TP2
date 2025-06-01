@@ -39,15 +39,14 @@ public class PersistenciaXML implements TipoPersistencia {
         XMLDecoder decoder = null;
         try {
             decoder = new XMLDecoder(new BufferedInputStream(new FileInputStream(fil_name)));
+            UsuarioLogueado usuarioCargado = (UsuarioLogueado) decoder.readObject();
+            decoder.close();
+
+            usuario.setContactos(usuarioCargado.getContactos());
+            agregarConversaciones(usuario, usuarioCargado.getConversaciones());
         } catch (FileNotFoundException e) {
+            System.out.println("Archivo " + fil_name + " no encontrado.");
         }
-
-        assert decoder != null;
-        UsuarioLogueado usuarioCargado = (UsuarioLogueado) decoder.readObject();
-        decoder.close();
-
-        usuario.setContactos(usuarioCargado.getContactos());
-        agregarConversaciones(usuario, usuarioCargado.getConversaciones());
     }
 
     private void agregarConversaciones(UsuarioLogueado usuario, CopyOnWriteArrayList<Conversacion> conversacionesPersistencia) {

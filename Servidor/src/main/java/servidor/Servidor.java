@@ -51,7 +51,7 @@ public class Servidor {
         try {
             //Por ahora el servidor corre en la maquina local
             serverSocket = new ServerSocket(puertoPrincipal);
-            System.out.println("Servidor PRINCIPAL iniciado");
+            System.out.println("Servidor PRINCIPAL iniciado en " + InetAddress.getLocalHost().getHostAddress() + ":" + puertoPrincipal);
 
             while (true) {
                 Socket socket = serverSocket.accept();

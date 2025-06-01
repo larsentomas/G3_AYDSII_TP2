@@ -1,0 +1,12 @@
+@USUARIO
+joaco,192.168.100.66,5100
+@CONTACTOS
+maite,maitona
+@CONVERSACIONES
+maite|maite|hola|1748818483640
+maite|joaco|HELLO|1748818490180
+maite|joaco|msg1|1748818500503
+maite|joaco|msg2|1748818503803
+maite|joaco|msg3|1748818506697
+maite|joaco|hola|1748818547224
+maite|maite|hi|1748818552546

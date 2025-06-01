@@ -104,6 +104,8 @@ public class PersistenciaTextoPlano implements TipoPersistencia {
 
             System.out.println("Carga completada desde " + filename);
 
+        } catch (FileNotFoundException e) {
+            System.out.println("Archivo no encontrado: " + filename);
         } catch (IOException e) {
             e.printStackTrace();
         }
