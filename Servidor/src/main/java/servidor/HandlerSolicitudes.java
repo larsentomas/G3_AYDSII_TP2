@@ -100,6 +100,7 @@ public class HandlerSolicitudes implements Runnable {
 
     public void enviarRespuestaCliente(String usuario, String tipo, Map<String, Object> datos, boolean error, String mensaje) {
         UsuarioServidor usuarioServidor = servidor.getUsuario(usuario);
+        System.out.println("ENVIANDO LOGIN");
         enviarRespuesta(usuarioServidor.getIp(), usuarioServidor.getPuerto(), tipo, datos, error, mensaje);
     }
 

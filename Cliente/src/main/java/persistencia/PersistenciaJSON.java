@@ -43,6 +43,7 @@ public class PersistenciaJSON implements TipoPersistencia {
                 agregarConversaciones(usuario, loaded.getConversaciones());
                 System.out.println("Datos cargados correctamente desde " + fileName);
             } catch (IOException e) {
+                e.printStackTrace();
                 System.err.println("Error al cargar datos: " + e.getMessage());
             }
         } else {
