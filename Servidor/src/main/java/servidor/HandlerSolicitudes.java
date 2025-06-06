@@ -58,14 +58,6 @@ public class HandlerSolicitudes implements Runnable {
                         enviarRespuestaCliente(usuarioConversacion, Respuesta.NUEVA_CONVERSACION, Map.of("usuarioConversacion", usuario), false, null);
                         enviarRespuestaCliente(usuario, Respuesta.CONFIRMACION, Map.of("solicitud", request.getId()), false, null);
                     }
-                    case Solicitud.PING -> {
-                        handlePing(request);
-                    }
-                    case Solicitud.RESINCRONIZACION -> {
-                        Map<String, Object> datos = Map.of("usuarios", servidor.getDirectorio(), "mensajesOffline", servidor.getMensajesOffline());
-                        enviarRespuesta(InetAddress.getLocalHost().getHostAddress(), servidor.getPuertoSecundario(), Respuesta.RESINCRONIZACION, datos, false, null);
-                    }
-                    default -> enviarRespuesta(request.getDatos().get("ipCliente").toString(), (int) request.getDatos().get("puertoCliente"), "UNKNOWN_REQUEST", Map.of("solicitud", request), true, "No se reconoce la solicitud");
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -181,17 +173,6 @@ public class HandlerSolicitudes implements Runnable {
             enviarRespuestaCliente(usuario, Respuesta.MENSAJES_OFFLINE, map, false, null);
         }
 
-    }
-
-    public void handlePing(Solicitud request) {
-        String origen = (String) request.getDatos().get("origen");
-        //System.out.println("Ping recibido de " + origen);
-        if("backup".equalsIgnoreCase(origen)){
-            actualizarSecundario(Respuesta.ECHO, Map.of());
-        }else{
-            String usuario = (String) request.getDatos().get("usuario");
-            enviarRespuestaCliente(usuario, Respuesta.ECHO, Map.of("id", request.getId()), false, null);
-        }
     }
 
     public void routeMensaje(int solId, Mensaje mensaje, String recep) {

@@ -4,9 +4,8 @@ import excepciones.UsuarioExistenteException;
 
 
 import common.*;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+
+import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,15 +13,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Servidor {
 
     private ServerSocket serverSocket;
+    public ServerSocket serverSocketMonitor;
     private HashMap<String, UsuarioServidor> directorio = new HashMap<>();
     private final Map<String, Queue<Mensaje>> colaMensajes = new ConcurrentHashMap<>();
     private int intervaloPing = 5000;
     private boolean recibioEcho;
     private volatile boolean monitoreo = false;
     private final int puertoPrincipal = 6000;
-    private final int puertoSecundario = 6001;
+    private final int puertoMonitor = 7000;
+    private final int puertoSecundario= 6001;
 
-    public Servidor() {
+    public Servidor() throws IOException {
         if (noExisteServidor(puertoPrincipal)) {
             start();
         } else {
@@ -42,26 +43,42 @@ public class Servidor {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         new Servidor();
-
     }
 
-    public void start() {
-        try {
-            //Por ahora el servidor corre en la maquina local
-            serverSocket = new ServerSocket(puertoPrincipal);
-            System.out.println("Servidor PRINCIPAL iniciado en " + InetAddress.getLocalHost().getHostAddress() + ":" + puertoPrincipal);
+    // Example of separate ports (recommended if you want separate services)
+    public void start() throws IOException {
+        serverSocket = new ServerSocket(puertoPrincipal);
+        serverSocketMonitor = new ServerSocket(puertoMonitor);
 
+        // Thread for clients
+        new Thread(() -> {
             while (true) {
-                Socket socket = serverSocket.accept();
-                new Thread(new HandlerSolicitudes(socket, this)).start();
-                System.out.flush();
+                try {
+                    Socket clientSocket = serverSocket.accept();
+                    new Thread(new HandlerSolicitudes(clientSocket, this)).start();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-        } catch (IOException e) {
-            System.err.println("Error en el servidor: " + e.getMessage());
-        }
+        }).start();
+
+        // Thread for monitor
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Socket monitorSocket = serverSocketMonitor.accept();
+                    new Thread(new Monitor(monitorSocket, this)).start();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+        System.out.println("Servidor iniciado: clients on " + puertoPrincipal + ", monitor on " + puertoMonitor);
     }
+
 
     public Map<String, Queue<Mensaje>> getMensajesOffline() {
         return colaMensajes;
@@ -145,11 +162,9 @@ public class Servidor {
     }
 
     public void iniciarMonitoreo() {
-
         try {
-            System.out.println("Servidor SECUNDARIO iniciado");
             ServerSocket socket = new ServerSocket(puertoSecundario);
-
+            System.out.println("Servidor SECUNDARIO iniciado en " + InetAddress.getLocalHost().getHostAddress() + ":" + socket.getLocalPort());
             // RESINCRONIZACION
             resincronizacion();
 
@@ -173,7 +188,7 @@ public class Servidor {
         }).start();
     }
 
-    public void escuchar(ServerSocket serverSocket) {
+    public void escuchar(ServerSocket serverSocketEscucha) {
         System.out.println("Escuchando");
 
         new Thread(() -> {
@@ -182,7 +197,7 @@ public class Servidor {
                     //System.out.println("Esperando conexiones... monitoreo=" + this.monitoreo);
 
                     try {
-                        Socket socket = serverSocket.accept();
+                        Socket socket = serverSocketEscucha.accept();
                         new Thread(() -> {
                             try {
                                 ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
@@ -246,18 +261,21 @@ public class Servidor {
         }).start();
     }
 
-    public void monitorear(ServerSocket serverSocket) {
+    public void monitorear(ServerSocket serverSocketMonitor) {
         new Thread(() -> {
             while (this.monitoreo) {
                 try {
                     recibioEcho = false;
                     // Enviar Ping
                     new Thread(() -> {
-                        try (Socket socketPrincipal = new Socket(InetAddress.getLocalHost().getHostAddress(), puertoPrincipal)) {
+                        try (Socket socketPrincipal = new Socket(InetAddress.getLocalHost().getHostAddress(), puertoMonitor)){
                             HashMap<String, Object> datos = new HashMap<>();
-                            datos.put("origen", "backup");
                             Solicitud ping = new Solicitud(Solicitud.PING, datos);
                             ObjectOutputStream outputStream = new ObjectOutputStream(socketPrincipal.getOutputStream());
+                            BufferedWriter writer = new BufferedWriter(
+                                    new OutputStreamWriter(socketPrincipal.getOutputStream())
+                            );
+                            writer.write("SERVIDOR");
                             outputStream.writeObject(ping);
                             outputStream.flush();
                         } catch (IOException e) {
@@ -270,7 +288,7 @@ public class Servidor {
                 }
                 if (!recibioEcho) {
                     try {
-                        iniciarBackUp(serverSocket);
+                        iniciarBackUp(serverSocketMonitor);
                     } catch (IOException e) {
                         System.out.println("No se pudo levantar el servidor de backup");
                     }

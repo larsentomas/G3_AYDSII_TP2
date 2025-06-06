@@ -27,7 +27,6 @@ public class Solicitud implements Serializable {
         id = nextId.incrementAndGet();
         this.tipo = tipo;
         this.datos = new HashMap<>();
-
     }
 
     public Solicitud(String tipo, String usuario) {
