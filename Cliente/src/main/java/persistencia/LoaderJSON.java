@@ -9,25 +9,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class PersistenciaJSON implements TipoPersistencia {
+public class LoaderJSON implements Loader {
 
-    @Override
-    public void persistir(UsuarioLogueado usuario) {
-        // Implementacion de persistencia con JSON
-        System.out.println("Persistiendo datos en formato JSON.");
-
-        String fileName = usuario.getNombre() + ".json";
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            mapper.writeValue(new File(fileName), usuario);
-            System.out.println("Datos persistidos correctamente en " + fileName);
-        } catch (IOException e) {
-            System.err.println("Error al persistir datos: " + e.getMessage());
-        }
-
-    }
-
-    @Override
     public void cargar(UsuarioLogueado usuario) {
         // Implementación de la carga de datos desde JSON
         System.out.println("Cargando datos desde formato JSON.");

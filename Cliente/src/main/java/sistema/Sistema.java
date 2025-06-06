@@ -9,10 +9,10 @@ import encriptacion.EncriptarAES;
 import excepciones.ContactoRepetidoException;
 import excepciones.PuertoInvalidoException;
 import modelo.*;
-import persistencia.FactoryPersistencia;
-import persistencia.PersistenciaJSON;
-import persistencia.PersistenciaXML;
-import persistencia.TipoPersistencia;
+import persistencia.FactoryJSON;
+import persistencia.FactoryTextoPlano;
+import persistencia.FactoryXML;
+import persistencia.PersistenciaFactory;
 import vista.VistaInicio;
 import vista.VistaLogin;
 
@@ -33,7 +33,7 @@ public class Sistema {
     private static int puertoServidor;
     private static String ipServidor;
     private final String clave_encriptacion;
-    private final int tipo_persistencia;
+    private static int tipo_persistencia = 0;
 
     private String tipoCifrado;
 
@@ -171,8 +171,20 @@ public class Sistema {
                     } else {
 
                         // PERSISTENCIA
-                        TipoPersistencia p = FactoryPersistencia.crearPersistencia(tipo_persistencia);
-                        p.cargar(usuarioLogueado);
+                        PersistenciaFactory p;
+                        switch (tipo_persistencia) {
+                            case(0):
+                                p = new FactoryJSON();
+                                break;
+                            case(1):
+                                p = new FactoryXML();
+                            case(2):
+                                p = new FactoryTextoPlano();
+                            default:
+                                p = new FactoryJSON();
+                        }
+                        p.crearLoader().cargar(usuarioLogueado);
+
                         controladorLogin.setVisible(false);
                         controlador.setVisible(true);
                         controlador.setBienvenida(usuarioLogueado.getNombre());
@@ -388,9 +400,20 @@ public class Sistema {
             enviarAServidor(new Solicitud(Solicitud.LOGOUT, Sistema.getInstance().getUsuarioLogueado().getNombre()));
             controlador.setVisible(false);
 
-            // Persistencia
-            TipoPersistencia p = FactoryPersistencia.crearPersistencia(getInstance().tipo_persistencia);
-            p.persistir(usuarioLogueado);
+            // PERSISTENCIA
+            PersistenciaFactory p;
+            switch (Sistema.tipo_persistencia) {
+                case(0):
+                    p = new FactoryJSON();
+                    break;
+                case(1):
+                    p = new FactoryXML();
+                case(2):
+                    p = new FactoryTextoPlano();
+                default:
+                    p = new FactoryJSON();
+            }
+            p.crearSaver().persistir(usuarioLogueado);
 
             System.exit(1);
         } catch (Exception e) {
