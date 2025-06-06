@@ -22,12 +22,6 @@ public class Comunicador implements Runnable {
     public void run() {
         try (Socket s = new Socket(ip, puerto)) {
             ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
-
-            BufferedWriter writer = new BufferedWriter(
-                    new OutputStreamWriter(s.getOutputStream())
-            );
-            writer.write("CLIENTE");
-
             out.writeObject(solicitud);
             out.flush();
         } catch (IOException e) {
