@@ -11,7 +11,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class UsuarioLogueado extends Usuario {
 
     private HashMap<String, String> contactos; // usuario, apodo
-    private CopyOnWriteArrayList<Conversacion> conversaciones; // nombre : nickname nuestro
+    private ArrayList<Conversacion> conversaciones; // nombre : nickname nuestro
 
     public UsuarioLogueado() {
     }
@@ -19,13 +19,13 @@ public class UsuarioLogueado extends Usuario {
     public UsuarioLogueado(String nickname, String ip, int puerto) {
         super(nickname, ip, puerto);
         this.contactos = new HashMap<>();
-        this.conversaciones = new CopyOnWriteArrayList<>();
+        this.conversaciones = new ArrayList<>();
     }
 
     public UsuarioLogueado(Usuario u) {
         super(u.getNombre(), u.getIp(), u.getPuerto());
         this.contactos = new HashMap<>();
-        this.conversaciones = new CopyOnWriteArrayList<>();
+        this.conversaciones = new ArrayList<>();
     }
 
     public Conversacion crearConversacion(String usuario) {
@@ -101,18 +101,22 @@ public class UsuarioLogueado extends Usuario {
         this.conversaciones.add(conversacion);
     }
 
-    public CopyOnWriteArrayList<Conversacion> getConversaciones() {
+    public ArrayList<Conversacion> getConversaciones() {
         return conversaciones;
     }
 
     // Extras para persistencia
 
+    public ArrayList<Conversacion> getSerializableConversaciones() {
+        return new ArrayList<>(conversaciones);
+    }
 
     public void setContactos(HashMap<String, String> contactos) {
         this.contactos = contactos;
     }
 
-    public void setConversaciones(CopyOnWriteArrayList<Conversacion> conversaciones) {
+    public void setConversaciones(ArrayList<Conversacion> conversaciones) {
         this.conversaciones = conversaciones;
     }
+
 }

@@ -339,10 +339,13 @@ public class Sistema {
                     break;
                 case(1):
                     p = new FactoryXML();
+                    break;
                 case(2):
                     p = new FactoryTextoPlano();
+                    break;
                 default:
                     p = new FactoryJSON();
+                    break;
             }
             p.crearSaver().persistir(usuarioLogueado);
 

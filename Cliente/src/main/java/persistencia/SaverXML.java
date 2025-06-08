@@ -6,6 +6,7 @@ import java.beans.XMLEncoder;
 import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 
 public class SaverXML implements Saver {
 
@@ -22,7 +23,5 @@ public class SaverXML implements Saver {
         } catch (FileNotFoundException e) {
             System.err.println("Error al crear el archivo XML: " + e.getMessage());
         }
-
     }
-
 }

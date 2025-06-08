@@ -1,13 +1,10 @@
 @USUARIO
-dario,192.168.0.108,2000
+dario,192.168.0.108,3200
 @CONTACTOS
-larsen,larsen
+larsen,adsasd
 fran,fran
 @CONVERSACIONES
-fran|fran|ZgbOE2F3Gop7mKKZG0d7hqgIaCtRo7U5o0xIIx2rJ88=|1748917383842
-fran|dario|filho da puta agora sim entendo|1748917403890
-fran|fran|IQ4sgu/NGUwcF7Z9fWcVMI==|1748917523569
-fran|dario|allahu akbar|1748917540540
-fran|fran|WcmUELKKbu6NArfreqxgqS==|1748917552315
-larsen|dario|mogolico|1748917591090
-larsen|dario|te amo|1748917594170
+larsen|dario|asdasd|1749426800687
+larsen|dario|aaa|1749426802756
+fran|dario|asdasd|1749426806220
+fran|dario|asdasd|1749426807052

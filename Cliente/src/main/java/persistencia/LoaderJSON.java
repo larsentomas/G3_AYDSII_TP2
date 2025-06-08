@@ -7,6 +7,7 @@ import modelo.UsuarioLogueado;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class LoaderJSON implements Loader {
@@ -35,8 +36,10 @@ public class LoaderJSON implements Loader {
     }
 
 
-    private void agregarConversaciones(UsuarioLogueado usuario, CopyOnWriteArrayList<Conversacion> conversacionesPersistencia) {
+    private void agregarConversaciones(UsuarioLogueado usuario, ArrayList<Conversacion> conversacionesPersistencia) {
+        System.out.println("Conversaciones:" + conversacionesPersistencia);
         for (Conversacion conversacion : conversacionesPersistencia) {
+            System.out.println("Conversacion:" + conversacion);
             if (usuario.getConversacionCon(conversacion.getIntegrante()) == null) {
                 usuario.getConversaciones().add(conversacion);
             } else {

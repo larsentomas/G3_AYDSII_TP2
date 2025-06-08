@@ -14,7 +14,210 @@
    </object>
   </void>
   <void property="conversaciones">
-   <object class="java.util.concurrent.CopyOnWriteArrayList"/>
+   <object class="java.util.ArrayList">
+    <void method="add">
+     <object class="common.Conversacion">
+      <void property="integrante">
+       <string>larsen</string>
+      </void>
+      <void property="mensajes">
+       <object class="java.util.ArrayList">
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>asdasd</string>
+          </void>
+          <void property="emisor">
+           <string>larsen</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426580106</long>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>asdasdasd</string>
+          </void>
+          <void property="emisor">
+           <string>larsen</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426581029</long>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>asdasd</string>
+          </void>
+          <void property="emisor">
+           <string>larsen</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426581770</long>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>asdasd</string>
+          </void>
+          <void property="emisor">
+           <string>larsen</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426582491</long>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>asdasda</string>
+          </void>
+          <void property="emisor">
+           <string>larsen</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426583340</long>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>aaa</string>
+          </void>
+          <void property="emisor">
+           <string>larsen</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426584100</long>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>aaaa</string>
+          </void>
+          <void property="emisor">
+           <string>larsen</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426585819</long>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>hola crack</string>
+          </void>
+          <void property="emisor">
+           <string>larsen</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426734956</long>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>que chamoes con estof</string>
+          </void>
+          <void property="emisor">
+           <string>larsen</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426741118</long>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>funcoina o noooo</string>
+          </void>
+          <void property="emisor">
+           <string>larsen</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426744973</long>
+           </object>
+          </void>
+         </object>
+        </void>
+       </object>
+      </void>
+     </object>
+    </void>
+    <void method="add">
+     <object class="common.Conversacion">
+      <void property="integrante">
+       <string>dario</string>
+      </void>
+      <void property="mensajes">
+       <object class="java.util.ArrayList">
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>ialial</string>
+          </void>
+          <void property="emisor">
+           <string>dario</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426806215</long>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void method="add">
+         <object class="common.Mensaje">
+          <void property="contenido">
+           <string>ialial</string>
+          </void>
+          <void property="emisor">
+           <string>dario</string>
+          </void>
+          <void property="timestampCreado">
+           <object class="java.sql.Timestamp">
+            <long>1749426807047</long>
+           </object>
+          </void>
+         </object>
+        </void>
+       </object>
+      </void>
+     </object>
+    </void>
+   </object>
   </void>
   <void property="ip">
    <string>192.168.0.108</string>
@@ -23,7 +226,7 @@
    <string>fran</string>
   </void>
   <void property="puerto">
-   <int>3000</int>
+   <int>4000</int>
   </void>
  </object>
 </java>
