@@ -8,15 +8,14 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Map;
 
 public class Monitor implements Runnable {
     private Socket socketRecepcion;
-    private ServidorPrimario servidor;
+    private ActivoState servidor;
     private ObjectInputStream inputStream;
 
-    public Monitor(Socket socketRecepcion, ServidorPrimario servidor) throws IOException {
+    public Monitor(Socket socketRecepcion, ActivoState servidor) throws IOException {
         this.socketRecepcion = socketRecepcion;
         this.servidor = servidor;
         this.inputStream = new ObjectInputStream(socketRecepcion.getInputStream());

@@ -13,11 +13,11 @@ import java.util.*;
 
 public class HandlerSolicitudes implements Runnable {
     private Socket socketRecepcion;
-    private ServidorPrimario servidor;
+    private ActivoState servidor;
     private ObjectInputStream inputStream;
     private volatile boolean conectado = true;
 
-    public HandlerSolicitudes(Socket socketRecepcion, ServidorPrimario servidor) throws IOException {
+    public HandlerSolicitudes(Socket socketRecepcion, ActivoState servidor) throws IOException {
         this.socketRecepcion = socketRecepcion;
         this.servidor = servidor;
         this.inputStream = new ObjectInputStream(socketRecepcion.getInputStream());

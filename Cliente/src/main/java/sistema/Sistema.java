@@ -1,5 +1,6 @@
 package sistema;
 
+import comandos.*;
 import common.*;
 import controlador.Controlador;
 import controlador.ControladorLogin;
@@ -46,7 +47,7 @@ public class Sistema {
     static Controlador controlador;
     static ControladorLogin controladorLogin;
 
-    private final Map<Integer, Long> pendingPings = new ConcurrentHashMap<>();
+    private final Map<String, Comando> comandos = new HashMap<>();
 
     private ContextoEncriptacion contexto = new ContextoEncriptacion();
 
@@ -81,6 +82,14 @@ public class Sistema {
         tipo_persistencia = Config.getInt("persistencia.tipo");
         tipoCifrado = Config.get("encriptacion.tipo");
 
+        comandos.put("MENSAJE_RECIBIDO", new ComandoMensajeRecibido());
+        comandos.put("DIRECTORIO", new ComandoDirectorio());
+        comandos.put("LOGIN", new ComandoLogin());
+        comandos.put("ENVIAR_MENSAJE", new ComandoEnviarMensaje());
+        comandos.put("NUEVA_CONVERSACION", new ComandoNuevaConversacion());
+        comandos.put("MENSAJES_OFFLINE", new ComandoMensajesOffline());
+        comandos.put("LOGOUT", new ComandoLogout());
+
     }
 
     public static Sistema getInstance() {
@@ -92,8 +101,21 @@ public class Sistema {
 
     // Getters y Setters
 
+
+    public static int getTipoPersistencia() {return tipo_persistencia;}
+
+    public String getTipoCifrado() {return tipoCifrado;}
+
+    public ContextoEncriptacion getContexto() {return contexto;}
+
+    public String getClave_encriptacion() {return clave_encriptacion;}
+
     public UsuarioLogueado getUsuarioLogueado() {
         return usuarioLogueado;
+    }
+
+    public void setUsuarioLogueado(UsuarioLogueado usuarioLogueado) {
+        Sistema.usuarioLogueado = usuarioLogueado;
     }
 
     public static VistaInicio getVistaInicio() {
@@ -103,6 +125,12 @@ public class Sistema {
     public static VistaLogin getVistaLogin() {
         return vistaLogin;
     }
+
+
+
+    public Controlador getControlador() {return controlador;}
+
+    public ControladorLogin getControladorLogin() {return controladorLogin;}
 
     public Conversacion crearConversacion(String apodo) {
         // Crear una nueva conversacion
@@ -134,108 +162,11 @@ public class Sistema {
 
     public void recibirObj(Object obj) {
         if (obj instanceof Respuesta respuesta) {
-            System.out.println(respuesta);
-            switch(respuesta.getTipo()) {
-                case Respuesta.MENSAJE_RECIBIDO -> {
-
-                    Mensaje mensaje = (Mensaje) respuesta.getDatos().get("mensaje");
-                    String emisor = mensaje.getEmisor();
-
-                    Conversacion conversacion;
-                    if (!usuarioLogueado.getContactos().containsKey(emisor)) {
-                        try {
-                            usuarioLogueado.agregarContacto(emisor, emisor);
-                            conversacion = usuarioLogueado.crearConversacion(emisor);
-                        } catch (ContactoRepetidoException e) {
-                            throw new RuntimeException(e);
-                        }
-                    } else {
-                        conversacion = usuarioLogueado.getConversacionCon(emisor);
-                    }
-                    agregarMensajeConversacion(mensaje, conversacion);
-
-                    if (conversacion == controlador.getConversacionActiva()) {
-                        controlador.actualizarPanelChat(conversacion);
-                    } else {
-                        conversacion.setNotificado(true);
-                    }
-                    controlador.actualizarListaConversaciones();
-
-                }
-                case Respuesta.DIRECTORIO -> recibirListaUsuarios(respuesta);
-                case Respuesta.LOGIN -> {
-                    if (respuesta.getError()) {
-                        // Si el usuario no es valido, se le muestra un mensaje de error
-                        usuarioLogueado = null;
-                        vistaLogin.mostrarModalError("El usuario ya existe.");
-                    } else {
-
-                        // PERSISTENCIA
-                        PersistenciaFactory p;
-                        switch (tipo_persistencia) {
-                            case(0):
-                                p = new FactoryJSON();
-                                break;
-                            case(1):
-                                p = new FactoryXML();
-                            case(2):
-                                p = new FactoryTextoPlano();
-                            default:
-                                p = new FactoryJSON();
-                        }
-                        p.crearLoader().cargar(usuarioLogueado);
-
-                        controladorLogin.setVisible(false);
-                        controlador.setVisible(true);
-                        controlador.setBienvenida(usuarioLogueado.getNombre());
-                        controlador.actualizarListaConversaciones();
-                    }
-                }
-                case Respuesta.ENVIAR_MENSAJE -> {
-                    if (respuesta.getError()) {
-                        // Si el mensaje no se pudo enviar, se le muestra un mensaje de error
-                        controlador.mostrarModalError("El mensaje no se pudo enviar.");
-                    } else {
-                        // Si el mensaje se envio correctamente, se le muestra un mensaje de exito
-                        Mensaje mensaje = (Mensaje) respuesta.getDatos().get("mensaje");
-                        String receptor = (String) respuesta.getDatos().get("receptor");
-                        Conversacion c = usuarioLogueado.getConversacionCon(receptor);
-
-                        switch (this.tipoCifrado) {
-                            case "0":
-                                contexto.setEstrategia(new CifradoCaesarClave());
-                                break;
-                            case "1":
-                                contexto.setEstrategia(new EncriptarAES());
-                                break;
-                            default:
-                                throw new IllegalArgumentException("Tipo de cifrado inválido: " + tipoCifrado);
-                        }
-                        mensaje = contexto.desencriptar(mensaje, this.clave_encriptacion); // ACA DESENCRIPTA
-                        usuarioLogueado.agregarMensajeaConversacion(mensaje, c);
-                        controlador.actualizarPanelChat(c);
-                    }
-                }
-                case Respuesta.NUEVA_CONVERSACION -> {
-                    String usuarioConversacion = (String) respuesta.getDatos().get("usuarioConversacion");
-                    if (!usuarioLogueado.getContactos().containsKey(usuarioConversacion)) {
-                        try {
-                            usuarioLogueado.agregarContacto(usuarioConversacion, usuarioConversacion);
-                        } catch (ContactoRepetidoException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    usuarioLogueado.crearConversacion(usuarioConversacion);
-                    controlador.actualizarListaConversaciones();
-                }
-                case Respuesta.ECHO -> {
-                    int requestId = (int) respuesta.getDatos().get("id");
-                    synchronized (pendingPings) {
-                        pendingPings.remove(requestId);
-                    }
-                }
-                case Respuesta.MENSAJES_OFFLINE -> recibirMensajesOffline(respuesta);
-                case Respuesta.LOGOUT -> cerrarSesion();
+            Comando comando = comandos.get(respuesta.getTipo());
+            if (comando != null) {
+                comando.ejecutar(respuesta, this);
+            } else {
+                System.out.println("No se encontro un comando para: " + respuesta.getTipo());
             }
         }
     }
@@ -437,4 +368,6 @@ public class Sistema {
             System.exit(1);
         }
     }
+
+
 }

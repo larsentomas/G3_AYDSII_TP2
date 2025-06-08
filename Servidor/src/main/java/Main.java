@@ -1,8 +1,7 @@
 import excepciones.ServidorPrincipalCaidoException;
 import servidor.Servidor;
-import servidor.ServidorBase;
-import servidor.ServidorPrimario;
-import servidor.ServidorSecundario;
+import servidor.ActivoState;
+import servidor.PasivoState;
 
 public class Main {
 
@@ -14,10 +13,10 @@ public class Main {
 
         if (Servidor.noExisteServidor(puertoPrincipal)) {
             System.out.println("SERVIDOR PRIMARIO");
-            servidor.setServidor(new ServidorPrimario(servidor));
+            servidor.setState(new ActivoState(servidor));
         } else if (Servidor.noExisteServidor(puertoSecundario)) {
             System.out.println("SERVIDOR SECUNDARIO");
-            servidor.setServidor(new ServidorSecundario(servidor));
+            servidor.setState(new PasivoState(servidor));
         } else {
             System.out.println("No se puede iniciar el servidor. Ya existe un servidor en los puertos especificados.");
         }

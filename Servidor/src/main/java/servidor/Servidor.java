@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Servidor {
-    public ServidorBase servidor;
+    public ServidorState state;
 
     protected ServerSocket serverSocket;
     protected ServerSocket serverSocketMonitor;
@@ -30,18 +30,23 @@ public class Servidor {
     }
 
     public void start() throws ServidorPrincipalCaidoException {
-        servidor.start();
+        state.start();
     };
 
-    public boolean logearCliente(String usuario, String ip, int puerto) throws IOException, UsuarioExistenteException {return servidor.logearCliente(usuario, ip, puerto);}
-    public boolean validarDireccion(String ip, int puerto, String name) {return servidor.validarDireccion(ip, puerto, name);}
-    public ArrayList<String> getDatosDirectorio() {return servidor.getDatosDirectorio();}
-    public UsuarioServidor getUsuario(String usuario) {return servidor.getUsuario(usuario);}
-    public void resincronizacion() {servidor.resincronizacion();};
-    public void escuchar(ServerSocket serverSocketEscucha) {servidor.escuchar(serverSocketEscucha);}
-    public void monitorear(ServerSocket serverSocketMonitor) throws ServidorPrincipalCaidoException {servidor.monitorear();}
-    public void agregarDirectorio(String usuario, UsuarioServidor usuarioServidor) {servidor.agregarDirectorio(usuario, usuarioServidor);}
-    public void agregarMensajeACola(String usuario, Mensaje mensaje) {servidor.agregarMensajeACola(usuario, mensaje);}
+    public boolean logearCliente(String usuario, String ip, int puerto) throws IOException, UsuarioExistenteException {return state.logearCliente(usuario, ip, puerto);}
+    public boolean validarDireccion(String ip, int puerto, String name) {return state.validarDireccion(ip, puerto, name);}
+    public ArrayList<String> getDatosDirectorio() {return state.getDatosDirectorio();}
+    public UsuarioServidor getUsuario(String usuario) {return state.getUsuario(usuario);}
+    public void resincronizacion() {
+        state.resincronizacion();};
+    public void escuchar(ServerSocket serverSocketEscucha) {
+        state.escuchar(serverSocketEscucha);}
+    public void monitorear(ServerSocket serverSocketMonitor) throws ServidorPrincipalCaidoException {
+        state.monitorear();}
+    public void agregarDirectorio(String usuario, UsuarioServidor usuarioServidor) {
+        state.agregarDirectorio(usuario, usuarioServidor);}
+    public void agregarMensajeACola(String usuario, Mensaje mensaje) {
+        state.agregarMensajeACola(usuario, mensaje);}
 
     public static boolean noExisteServidor(int puerto) {
         try (ServerSocket serverSocket = new ServerSocket()) {
@@ -55,8 +60,8 @@ public class Servidor {
 
     // Getters y setters
 
-    public ServidorBase getServidor() {
-        return servidor;
+    public ServidorState getState() {
+        return state;
     }
 
     public ServerSocket getServerSocket() {
@@ -130,11 +135,11 @@ public class Servidor {
 
     // PATRON STATE
 
-    public void cambiarServidor(ServidorBase servidor) {
-        this.servidor = servidor;
+    public void cambiarState(ServidorState state) {
+        this.state = state;
     }
 
-    public void setServidor(ServidorBase servidor) {
-        this.servidor = servidor;
+    public void setState(ServidorState state) {
+        this.state = state;
     }
 }
