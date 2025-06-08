@@ -13,11 +13,11 @@ import java.util.*;
 
 public class HandlerSolicitudes implements Runnable {
     private Socket socketRecepcion;
-    private Servidor servidor;
+    private ActivoState servidor;
     private ObjectInputStream inputStream;
     private volatile boolean conectado = true;
 
-    public HandlerSolicitudes(Socket socketRecepcion, Servidor servidor) throws IOException {
+    public HandlerSolicitudes(Socket socketRecepcion, ActivoState servidor) throws IOException {
         this.socketRecepcion = socketRecepcion;
         this.servidor = servidor;
         this.inputStream = new ObjectInputStream(socketRecepcion.getInputStream());
@@ -158,7 +158,7 @@ public class HandlerSolicitudes implements Runnable {
 
     private void handleColaMensajes(String usuario){
         HashMap<String, ArrayList<Mensaje>> mensajes = new HashMap<>();
-        Queue<Mensaje> colaMensajes = servidor.getMensajesOffline(usuario);
+        Queue<Mensaje> colaMensajes = servidor.getColaMensajesUsuario(usuario);
 
         if (colaMensajes != null) {
             while (colaMensajes.peek() != null) {

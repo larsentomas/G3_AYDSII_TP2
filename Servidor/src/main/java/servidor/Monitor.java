@@ -8,15 +8,14 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Map;
 
 public class Monitor implements Runnable {
     private Socket socketRecepcion;
-    private Servidor servidor;
+    private ActivoState servidor;
     private ObjectInputStream inputStream;
 
-    public Monitor(Socket socketRecepcion, Servidor servidor) throws IOException {
+    public Monitor(Socket socketRecepcion, ActivoState servidor) throws IOException {
         this.socketRecepcion = socketRecepcion;
         this.servidor = servidor;
         this.inputStream = new ObjectInputStream(socketRecepcion.getInputStream());
@@ -27,15 +26,12 @@ public class Monitor implements Runnable {
         try {
             Object obj = inputStream.readObject();
             if (obj instanceof Solicitud request) {
-                if (!request.getTipo().equals(Solicitud.PING)) {
-                    System.out.println("Solicitud recibida: " + request.getTipo());
-                }
                 switch (request.getTipo()) {
                     case Solicitud.PING -> {
                         enviarRespuesta(InetAddress.getLocalHost().getHostAddress(), servidor.getPuertoSecundario(), Respuesta.ECHO, Map.of(), false, null);
                     }
                     case Solicitud.RESINCRONIZACION -> {
-                        Map<String, Object> datos = Map.of("usuarios", servidor.getDirectorio(), "mensajesOffline", servidor.getMensajesOffline());
+                        Map<String, Object> datos = Map.of("usuarios", servidor.getDirectorio(), "mensajesOffline", servidor.getColaMensajes());
                         enviarRespuesta(InetAddress.getLocalHost().getHostAddress(), servidor.getPuertoSecundario(), Respuesta.RESINCRONIZACION, datos, false, null);
                     }
                     default -> enviarRespuesta(InetAddress.getLocalHost().getHostAddress(), servidor.getPuertoSecundario(), "UNKNOWN_REQUEST", Map.of("solicitud", request), true, "No se reconoce la solicitud");
@@ -52,6 +48,9 @@ public class Monitor implements Runnable {
             ObjectOutputStream outputStream = new ObjectOutputStream(socketEnvio.getOutputStream());
             outputStream.writeObject(response);
             outputStream.flush();
+            if (!tipo.equalsIgnoreCase(Respuesta.ECHO)) {
+                System.out.println("Enviado " + tipo + " a " + ip + ":" + puerto);
+            }
         } catch (IOException e) {
             System.out.println("Failed to send " + tipo + " to " + ip + ":" + puerto);
         }
