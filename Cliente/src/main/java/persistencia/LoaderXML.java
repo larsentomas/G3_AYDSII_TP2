@@ -6,6 +6,7 @@ import modelo.UsuarioLogueado;
 
 import java.beans.XMLDecoder;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class LoaderXML implements Loader {
@@ -29,7 +30,7 @@ public class LoaderXML implements Loader {
         }
     }
 
-    private void agregarConversaciones(UsuarioLogueado usuario, CopyOnWriteArrayList<Conversacion> conversacionesPersistencia) {
+    private void agregarConversaciones(UsuarioLogueado usuario, ArrayList<Conversacion> conversacionesPersistencia) {
         for (Conversacion conversacion : conversacionesPersistencia) {
             if (usuario.getConversacionCon(conversacion.getIntegrante()) == null) {
                 usuario.getConversaciones().add(conversacion);

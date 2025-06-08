@@ -53,6 +53,7 @@ public class Conversacion implements Serializable {
         this.mensajes.add(mensaje);
     }
 
+
     @Override
     public String toString(){
         return integrante;
