@@ -3,18 +3,20 @@ package common;
 import common.Mensaje;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 public class Conversacion implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String integrante;
-    private ArrayList<Mensaje> mensajes;
+    private CopyOnWriteArrayList<Mensaje> mensajes = new CopyOnWriteArrayList<>();
+    private ArrayList<Mensaje> mensajesXML = new ArrayList<>();
     private boolean notificado;
 
     public Conversacion(String persona) {
         this.integrante = persona;
-        this.mensajes = new ArrayList<>();
     }
 
     public Conversacion() {}
@@ -25,7 +27,13 @@ public class Conversacion implements Serializable {
         this.mensajes.add(mensaje);
     }
 
-    public ArrayList<Mensaje> getMensajes() {
+    public CopyOnWriteArrayList<Mensaje> getMensajes() {
+        if (mensajes == null || mensajes.isEmpty()) {
+            mensajes = new CopyOnWriteArrayList<>();
+            if (mensajesXML != null && !mensajesXML.isEmpty()) {
+                mensajes.addAll(mensajesXML);
+            }
+        }
         return mensajes;
     }
 
@@ -41,8 +49,8 @@ public class Conversacion implements Serializable {
         this.integrante = integrante;
     }
 
-    public void setMensajes(ArrayList<Mensaje> mensajes) {
-        this.mensajes = mensajes;
+    public void setMensajes(List<Mensaje> mensajes) {
+        this.mensajes = new CopyOnWriteArrayList<>(mensajes);
     }
 
     public void setNotificado(boolean notificado) {
@@ -53,9 +61,21 @@ public class Conversacion implements Serializable {
         this.mensajes.add(mensaje);
     }
 
+    public ArrayList<Mensaje> getMensajesXML() {
+        return new ArrayList<>(mensajes);
+    }
+
+    public void setMensajesXML(ArrayList<Mensaje> mensajesXML) {
+        this.mensajesXML = mensajesXML;
+    }
+
 
     @Override
     public String toString(){
-        return integrante;
+        return "Conversacion{" +
+                "integrante='" + integrante + '\'' +
+                ", mensajes=" + mensajes +
+                ", notificado=" + notificado +
+                '}';
     }
 }

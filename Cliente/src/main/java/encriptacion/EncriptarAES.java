@@ -22,6 +22,7 @@ public class EncriptarAES implements Strategy {
 
             return new Mensaje(textoBase64, mensaje.getEmisor());
         } catch (Exception e) {
+            System.err.println("Error al encriptar con AES: " + e.getMessage());
             e.printStackTrace();
             return mensaje;
         }
@@ -29,24 +30,32 @@ public class EncriptarAES implements Strategy {
 
     @Override
     public Mensaje desencriptar(Mensaje mensaje, String claveEncriptacion) {
+        String contenido = mensaje.getContenido();
+
+        // Si no es base64 válido, devolvemos el mensaje original
+        if (!esBase64Valido(contenido)) {
+            System.err.println("Contenido no es Base64 válido: " + contenido);
+            return mensaje;
+        }
+
         try {
             SecretKeySpec key = generarClave(claveEncriptacion);
             Cipher cipher = Cipher.getInstance(ALGORITMO);
             cipher.init(Cipher.DECRYPT_MODE, key);
 
-            byte[] bytesEncriptados = Base64.getDecoder().decode(mensaje.getContenido());
+            byte[] bytesEncriptados = Base64.getDecoder().decode(contenido);
             byte[] textoDesencriptado = cipher.doFinal(bytesEncriptados);
-            String contenido = new String(textoDesencriptado, StandardCharsets.UTF_8);
+            String textoPlano = new String(textoDesencriptado, StandardCharsets.UTF_8);
 
-            return new Mensaje(contenido, mensaje.getEmisor());
+            return new Mensaje(textoPlano, mensaje.getEmisor());
         } catch (Exception e) {
+            System.err.println("Error al desencriptar con AES: " + contenido);
             e.printStackTrace();
             return mensaje;
         }
     }
 
     private SecretKeySpec generarClave(String clave) {
-        // Asegura una clave de 16 bytes para AES-128
         byte[] claveBytes = new byte[16];
         byte[] claveOriginal = clave.getBytes(StandardCharsets.UTF_8);
 
@@ -55,5 +64,12 @@ public class EncriptarAES implements Strategy {
         }
 
         return new SecretKeySpec(claveBytes, ALGORITMO);
+    }
+
+    // Valida si una cadena es Base64 válida
+    private boolean esBase64Valido(String texto) {
+        // Debe tener longitud múltiplo de 4 y solo caracteres válidos
+        if (texto == null || texto.length() % 4 != 0) return false;
+        return texto.matches("^[A-Za-z0-9+/]*={0,2}$");
     }
 }

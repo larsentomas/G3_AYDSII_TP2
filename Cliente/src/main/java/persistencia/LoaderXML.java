@@ -7,6 +7,7 @@ import modelo.UsuarioLogueado;
 import java.beans.XMLDecoder;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class LoaderXML implements Loader {
@@ -24,21 +25,21 @@ public class LoaderXML implements Loader {
             decoder.close();
 
             usuario.setContactos(usuarioCargado.getContactos());
-            agregarConversaciones(usuario, usuarioCargado.getConversaciones());
+            agregarConversaciones(usuario, usuarioCargado.getConversacionesXML());
         } catch (FileNotFoundException e) {
             System.out.println("Archivo " + fil_name + " no encontrado.");
         }
     }
 
-    private void agregarConversaciones(UsuarioLogueado usuario, ArrayList<Conversacion> conversacionesPersistencia) {
+    private void agregarConversaciones(UsuarioLogueado usuario, ArrayList<Conversacion> conversaciones) {
+        CopyOnWriteArrayList<Conversacion> conversacionesPersistencia = new CopyOnWriteArrayList<>(conversaciones);
         for (Conversacion conversacion : conversacionesPersistencia) {
+            Conversacion conversacionExistente = usuario.getConversacionCon(conversacion.getIntegrante());
             if (usuario.getConversacionCon(conversacion.getIntegrante()) == null) {
                 usuario.getConversaciones().add(conversacion);
             } else {
-                // tengo que agregar los mensajes
-                Conversacion conversacionExistente = usuario.getConversacionCon(conversacion.getIntegrante());
-                for (Mensaje mensaje : conversacionExistente.getMensajes()) {
-                    conversacion.ponerMensaje(mensaje);
+                for (Mensaje mensaje : conversacion.getMensajesXML()) {
+                    conversacionExistente.ponerMensaje(mensaje);
                 }
                 usuario.setConversaciones(conversacionesPersistencia);
             }

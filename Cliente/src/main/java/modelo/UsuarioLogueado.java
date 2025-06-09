@@ -11,7 +11,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class UsuarioLogueado extends Usuario {
 
     private HashMap<String, String> contactos; // usuario, apodo
-    private ArrayList<Conversacion> conversaciones; // nombre : nickname nuestro
+    private CopyOnWriteArrayList<Conversacion> conversaciones; // nombre : nickname nuestro
+    // Campo persistente auxiliar
+    private ArrayList<Conversacion> conversacionesXML = new ArrayList<>();
 
     public UsuarioLogueado() {
     }
@@ -19,13 +21,13 @@ public class UsuarioLogueado extends Usuario {
     public UsuarioLogueado(String nickname, String ip, int puerto) {
         super(nickname, ip, puerto);
         this.contactos = new HashMap<>();
-        this.conversaciones = new ArrayList<>();
+        this.conversaciones = new CopyOnWriteArrayList<>();
     }
 
     public UsuarioLogueado(Usuario u) {
         super(u.getNombre(), u.getIp(), u.getPuerto());
         this.contactos = new HashMap<>();
-        this.conversaciones = new ArrayList<>();
+        this.conversaciones = new CopyOnWriteArrayList<>();
     }
 
     public Conversacion crearConversacion(String usuario) {
@@ -101,22 +103,30 @@ public class UsuarioLogueado extends Usuario {
         this.conversaciones.add(conversacion);
     }
 
-    public ArrayList<Conversacion> getConversaciones() {
+    public CopyOnWriteArrayList<Conversacion> getConversaciones() {
         return conversaciones;
     }
 
     // Extras para persistencia
 
-    public ArrayList<Conversacion> getSerializableConversaciones() {
-        return new ArrayList<>(conversaciones);
+    public CopyOnWriteArrayList<Conversacion> getSerializableConversaciones() {
+        return new CopyOnWriteArrayList<>(conversaciones);
     }
 
     public void setContactos(HashMap<String, String> contactos) {
         this.contactos = contactos;
     }
 
-    public void setConversaciones(ArrayList<Conversacion> conversaciones) {
+    public void setConversaciones(CopyOnWriteArrayList<Conversacion> conversaciones) {
         this.conversaciones = conversaciones;
+    }
+
+    // Getter/Setter para XMLEncoder
+    public ArrayList<Conversacion> getConversacionesXML() {
+        return new ArrayList<>(conversaciones);
+    }
+    public void setConversacionesXML(ArrayList<Conversacion> convs) {
+        this.conversaciones = new CopyOnWriteArrayList<>(convs);
     }
 
 }

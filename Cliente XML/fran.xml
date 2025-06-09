@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <java version="23.0.1" class="java.beans.XMLDecoder">
- <object class="modelo.UsuarioLogueado">
+ <object class="modelo.UsuarioLogueado" id="UsuarioLogueado0">
   <void property="contactos">
    <object class="java.util.HashMap">
     <void method="put">
@@ -14,210 +14,234 @@
    </object>
   </void>
   <void property="conversaciones">
-   <object class="java.util.ArrayList">
-    <void method="add">
-     <object class="common.Conversacion">
-      <void property="integrante">
-       <string>larsen</string>
-      </void>
-      <void property="mensajes">
-       <object class="java.util.ArrayList">
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>asdasd</string>
-          </void>
-          <void property="emisor">
-           <string>larsen</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426580106</long>
-           </object>
-          </void>
-         </object>
+   <object class="java.util.concurrent.CopyOnWriteArrayList"/>
+  </void>
+  <void id="ArrayList0" property="conversacionesXML">
+   <void method="add">
+    <object class="common.Conversacion" id="Conversacion0">
+     <void property="integrante">
+      <string>larsen</string>
+     </void>
+     <void id="ArrayList1" property="mensajesXML">
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>gsdgasdgasgd</string>
         </void>
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>asdasdasd</string>
-          </void>
-          <void property="emisor">
-           <string>larsen</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426581029</long>
-           </object>
-          </void>
-         </object>
+        <void property="emisor">
+         <string>larsen</string>
         </void>
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>asdasd</string>
-          </void>
-          <void property="emisor">
-           <string>larsen</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426581770</long>
-           </object>
-          </void>
-         </object>
-        </void>
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>asdasd</string>
-          </void>
-          <void property="emisor">
-           <string>larsen</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426582491</long>
-           </object>
-          </void>
-         </object>
-        </void>
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>asdasda</string>
-          </void>
-          <void property="emisor">
-           <string>larsen</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426583340</long>
-           </object>
-          </void>
-         </object>
-        </void>
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>aaa</string>
-          </void>
-          <void property="emisor">
-           <string>larsen</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426584100</long>
-           </object>
-          </void>
-         </object>
-        </void>
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>aaaa</string>
-          </void>
-          <void property="emisor">
-           <string>larsen</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426585819</long>
-           </object>
-          </void>
-         </object>
-        </void>
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>hola crack</string>
-          </void>
-          <void property="emisor">
-           <string>larsen</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426734956</long>
-           </object>
-          </void>
-         </object>
-        </void>
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>que chamoes con estof</string>
-          </void>
-          <void property="emisor">
-           <string>larsen</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426741118</long>
-           </object>
-          </void>
-         </object>
-        </void>
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>funcoina o noooo</string>
-          </void>
-          <void property="emisor">
-           <string>larsen</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426744973</long>
-           </object>
-          </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442150547</long>
          </object>
         </void>
        </object>
       </void>
-     </object>
-    </void>
-    <void method="add">
-     <object class="common.Conversacion">
-      <void property="integrante">
-       <string>dario</string>
-      </void>
-      <void property="mensajes">
-       <object class="java.util.ArrayList">
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>ialial</string>
-          </void>
-          <void property="emisor">
-           <string>dario</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426806215</long>
-           </object>
-          </void>
-         </object>
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>sdgsdgasg</string>
         </void>
-        <void method="add">
-         <object class="common.Mensaje">
-          <void property="contenido">
-           <string>ialial</string>
-          </void>
-          <void property="emisor">
-           <string>dario</string>
-          </void>
-          <void property="timestampCreado">
-           <object class="java.sql.Timestamp">
-            <long>1749426807047</long>
-           </object>
-          </void>
+        <void property="emisor">
+         <string>larsen</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442151719</long>
          </object>
         </void>
        </object>
       </void>
-     </object>
-    </void>
-   </object>
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>asdasdasd</string>
+        </void>
+        <void property="emisor">
+         <string>fran</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442161840</long>
+         </object>
+        </void>
+       </object>
+      </void>
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>asdasdasd</string>
+        </void>
+        <void property="emisor">
+         <string>fran</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442162703</long>
+         </object>
+        </void>
+       </object>
+      </void>
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>123123</string>
+        </void>
+        <void property="emisor">
+         <string>larsen</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442185434</long>
+         </object>
+        </void>
+       </object>
+      </void>
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>123123</string>
+        </void>
+        <void property="emisor">
+         <string>larsen</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442185434</long>
+         </object>
+        </void>
+       </object>
+      </void>
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>12312</string>
+        </void>
+        <void property="emisor">
+         <string>larsen</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442185434</long>
+         </object>
+        </void>
+       </object>
+      </void>
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>123123</string>
+        </void>
+        <void property="emisor">
+         <string>fran</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442199726</long>
+         </object>
+        </void>
+       </object>
+      </void>
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>12312312</string>
+        </void>
+        <void property="emisor">
+         <string>fran</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442200614</long>
+         </object>
+        </void>
+       </object>
+      </void>
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>123123</string>
+        </void>
+        <void property="emisor">
+         <string>fran</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442201254</long>
+         </object>
+        </void>
+       </object>
+      </void>
+     </void>
+     <void property="mensajesXML">
+      <object idref="ArrayList1"/>
+     </void>
+     <void property="notificado">
+      <boolean>true</boolean>
+     </void>
+    </object>
+   </void>
+   <void method="add">
+    <object class="common.Conversacion" id="Conversacion1">
+     <void property="integrante">
+      <string>dario</string>
+     </void>
+     <void id="ArrayList2" property="mensajesXML">
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>12412412</string>
+        </void>
+        <void property="emisor">
+         <string>dario</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442177778</long>
+         </object>
+        </void>
+       </object>
+      </void>
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>124124124</string>
+        </void>
+        <void property="emisor">
+         <string>dario</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442178642</long>
+         </object>
+        </void>
+       </object>
+      </void>
+      <void method="add">
+       <object class="common.Mensaje">
+        <void property="contenido">
+         <string>124124</string>
+        </void>
+        <void property="emisor">
+         <string>dario</string>
+        </void>
+        <void property="timestampCreado">
+         <object class="java.sql.Timestamp">
+          <long>1749442180537</long>
+         </object>
+        </void>
+       </object>
+      </void>
+     </void>
+     <void property="mensajesXML">
+      <object idref="ArrayList2"/>
+     </void>
+    </object>
+   </void>
+  </void>
+  <void property="conversacionesXML">
+   <object idref="ArrayList0"/>
   </void>
   <void property="ip">
    <string>192.168.0.108</string>

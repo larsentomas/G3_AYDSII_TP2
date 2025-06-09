@@ -24,7 +24,7 @@ public class LoaderJSON implements Loader {
             try {
                 UsuarioLogueado loaded = mapper.readValue(new File(fileName), UsuarioLogueado.class);
                 usuario.setContactos(loaded.getContactos());
-                agregarConversaciones(usuario, loaded.getConversaciones());
+                agregarConversaciones(usuario, loaded.getConversacionesXML());
                 System.out.println("Datos cargados correctamente desde " + fileName);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -36,8 +36,8 @@ public class LoaderJSON implements Loader {
     }
 
 
-    private void agregarConversaciones(UsuarioLogueado usuario, ArrayList<Conversacion> conversacionesPersistencia) {
-        System.out.println("Conversaciones:" + conversacionesPersistencia);
+    private void agregarConversaciones(UsuarioLogueado usuario, ArrayList<Conversacion> conversaciones) {
+        CopyOnWriteArrayList<Conversacion> conversacionesPersistencia = new CopyOnWriteArrayList<>(conversaciones);
         for (Conversacion conversacion : conversacionesPersistencia) {
             System.out.println("Conversacion:" + conversacion);
             if (usuario.getConversacionCon(conversacion.getIntegrante()) == null) {

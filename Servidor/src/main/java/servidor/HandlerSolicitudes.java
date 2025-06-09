@@ -170,6 +170,7 @@ public class HandlerSolicitudes implements Runnable {
 
             // Crea el map para enviar los mensajes por usuario
             Map<String, Object> map = new HashMap<>(mensajes);
+            System.out.println("📬 Enviando mensajes offline a " + usuario + ": " + mensajes.size() + " mensajes.");
             enviarRespuestaCliente(usuario, Respuesta.MENSAJES_OFFLINE, map, false, null);
         }
 

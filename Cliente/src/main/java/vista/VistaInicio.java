@@ -13,6 +13,7 @@ import java.awt.event.KeyEvent;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.swing.JButton;
 
 public class VistaInicio extends JFrame implements IVistaInicio {
@@ -294,10 +295,15 @@ public class VistaInicio extends JFrame implements IVistaInicio {
             panel.add(nombre, BorderLayout.NORTH);
 
             if (!conversacion.getMensajes().isEmpty()) {
-                JLabel ultimoMensaje = new JLabel("" + conversacion.getMensajes().getLast()); //chequear
-                ultimoMensaje.setForeground(isSelected ? BLANCO : Color.GRAY);
-                ultimoMensaje.setFont(new Font("Arial", Font.PLAIN, 12));
-                panel.add(ultimoMensaje, BorderLayout.SOUTH);
+                CopyOnWriteArrayList<Mensaje> mensajes = conversacion.getMensajes();
+                if (!mensajes.isEmpty()) {
+                    Mensaje ultimo = mensajes.get(mensajes.size() - 1);
+                    JLabel ultimoMensaje = new JLabel("" + ultimo);
+                    ultimoMensaje.setForeground(isSelected ? BLANCO : Color.GRAY);
+                    ultimoMensaje.setFont(new Font("Arial", Font.PLAIN, 12));
+                    panel.add(ultimoMensaje, BorderLayout.SOUTH);
+                }
+
             }else{
                 JLabel ultimoMensaje = new JLabel("-------");
                 ultimoMensaje.setForeground(isSelected ? BLANCO : Color.GRAY);

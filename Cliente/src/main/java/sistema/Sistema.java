@@ -141,8 +141,6 @@ public class Sistema {
         return c;
     }
 
-    // comunicacion con servidor
-
     public void enviarMensaje(String contenido, Conversacion conversacion) throws IOException {
         String tipoCifrado = this.tipoCifrado;
         switch (tipoCifrado) {
@@ -202,11 +200,10 @@ public class Sistema {
                     usuarioLogueado.agregarMensajeaConversacion(mensaje, conversacion);
                 }
             } catch (ContactoRepetidoException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         }
         controlador.actualizarListaConversaciones();
-
     }
 
     public void recibirListaUsuarios(Respuesta respuesta) {
